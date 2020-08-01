@@ -34,7 +34,7 @@ const (
 	TitleNotFound = "Страница не найдена"
 )
 
-type EMarketPage struct {
+type Page struct {
 	Title       string
 	Body        string
 	CurrentPage int
@@ -96,7 +96,7 @@ func (e *EMarket) notFound(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Printf("not found %v\n", r.URL.Path)
-	p := EMarketPage{Title: TitleNotFound, Body: html.NotFound}
+	p := Page{Title: TitleNotFound, Body: html.NotFound}
 	html.AppPage.Execute(w, p)
 }
 
@@ -104,7 +104,7 @@ func (e *EMarket) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		e.notFound(w, r)
 	} else {
-		p := EMarketPage{Title: TitleHome, CurrentPage: PageHome}
+		p := Page{Title: TitleHome, CurrentPage: PageHome}
 		html.AppPage.Execute(w, p)
 	}
 }
@@ -132,12 +132,12 @@ func (e *EMarket) handleFavicon(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *EMarket) delivery(w http.ResponseWriter, r *http.Request) {
-	p := EMarketPage{Title: TitleDelivery, CurrentPage: PageDelivery}
+	p := Page{Title: TitleDelivery, CurrentPage: PageDelivery}
 	html.AppPage.Execute(w, p)
 }
 
 func (e *EMarket) contact(w http.ResponseWriter, r *http.Request) {
-	p := EMarketPage{Title: TitleContact, CurrentPage: PageContact}
+	p := Page{Title: TitleContact, CurrentPage: PageContact}
 	html.AppPage.Execute(w, p)
 }
 
