@@ -1,13 +1,21 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readconcern"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 const (
@@ -17,6 +25,18 @@ const (
 	password = "1"
 	dbname   = "emarketrordb"
 )
+
+var client *mongo.Client
+
+type Product struct {
+	ID          primitive.ObjectID `bson:"_id,omitempty"`
+	Title       string             `bson:"title"`
+	Price       int                `bson:"price"`
+	Gallery     [][]byte           `bson:"gallery"`
+	Enable      bool               `bson:"enable"`
+	Description string             `bson:"description"`
+	Quantity    int                `bson:"quantity"`
+}
 
 func main() {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
@@ -38,6 +58,11 @@ func main() {
 
 	rows, err := db.Query(`SELECT title,gallery,price,max_count,enable,description FROM products`)
 
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	client, err := NewMongoClient()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -89,19 +114,90 @@ func main() {
 			description = initString()
 		}
 
-		if *enable {
-			fmt.Printf("%v %v %v %v\n", *title, gallery, *price, *maxCount)
-			for _, file := range gallery {
-				image := "/home/alek/emarket_files/gallery/" + file
-				info, err := os.Stat(image)
-				if err != nil {
-					log.Fatalln(err)
-				}
+		fmt.Printf("%v %v %v %v %v\n", *title, gallery, *price, *maxCount, *enable)
+		blobs := make([][]byte, 0)
+		for _, file := range gallery {
+			image := "/home/alek/emarket_files/gallery/" + file
+			info, err := os.Stat(image)
+			if err != nil {
+				log.Fatalln(err)
+			}
 
-				if info.Size() >= 1024*1024 {
-					log.Fatalf("size too big %v\n", image)
-				}
+			if info.Size() >= 1024*1024 {
+				log.Fatalf("size too big %v\n", image)
+			}
+
+			blob, err := ioutil.ReadFile(image)
+			blobs = append(blobs, blob)
+			if err != nil {
+				log.Fatal(err)
 			}
 		}
+
+		product := Product{
+			Title:       *title,
+			Price:       int(*price),
+			Gallery:     blobs,
+			Enable:      *enable,
+			Description: *description,
+			Quantity:    *maxCount,
+		}
+
+		collection := client.Database("mydb").Collection("test")
+		_, err = collection.InsertOne(context.Background(), product)
+
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
+}
+
+func NewMongoClient() (*mongo.Client, error) {
+	ip := "127.0.0.1"
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://" + ip + ":27017"))
+	if err != nil {
+		fmt.Printf("new client: %v\n", err)
+	}
+
+	ctx := DefaultContext()
+	err = client.Connect(ctx)
+	if err != nil {
+		fmt.Printf("connect: %v\n", err)
+		return nil, err
+	}
+
+	/*
+		defer func() {
+			if err := client.Disconnect(ctx); err != nil {
+				fmt.Printf("disconnect: %v\n", err)
+			}
+		}()
+	*/
+
+	err = client.Ping(ctx, readpref.Primary())
+	if err != nil {
+		fmt.Printf("ping: %v\n", err)
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func DefaultContext() context.Context {
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	return ctx
+}
+
+func Tx(callback func(ctx mongo.SessionContext) (interface{}, error)) (interface{}, error) {
+	ctx := DefaultContext()
+
+	s, err := client.StartSession()
+	if err != nil {
+		return nil, err
+	}
+
+	defer s.EndSession(ctx)
+
+	opts := options.Transaction().SetReadConcern(readconcern.Snapshot())
+	return s.WithTransaction(ctx, callback, opts)
 }

@@ -1,0 +1,60 @@
+.card {
+  border-width: 0px;
+  box-shadow: 0 1px 3px 1px rgba(0, 0, 0, 0.4);
+}
+
+.navbar {
+  margin-bottom: 0.5em;
+  box-shadow: 0 1px 3px 1px rgba(0, 0, 0, 0.4);
+}
+
+.navbar-light .navbar-nav .nav-link.active {
+  text-decoration: underline;
+}
+
+.page-link, .page-link:hover {
+  color: black;
+}
+
+.page-item.active .page-link, .btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn.btn-secondary {
+  color: #fff;
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.page-item.active .page-link {
+  border-color: #28a745;
+}
+
+.page-item.active .page-link:hover, .btn:hover {
+  background-color: #1e7e34;
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(0, 0, 0, 0.5)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+
+.btn.btn-danger {
+  background-color: #dc3545;
+}
+
+.btn.btn-success {
+  background-color: #28a745;
+}
+
+.nav-link {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.navbar-brand, .nav-link.active, .nav-link:hover {
+  color: black;
+}
+
+.nav-link.active {
+  text-decoration: underline;
+}
