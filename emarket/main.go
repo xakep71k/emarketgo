@@ -76,8 +76,8 @@ func NewEMarket(rootDir string) *EMarket {
 	router.HandleFunc("/fontawesome/", e.handleFile)
 	router.HandleFunc("/static/", e.handleFile)
 	router.HandleFunc(URLHome, e.home)
-	router.HandleFunc(URLDelivery, e.Delivery)
-	router.HandleFunc(URLContact, e.ContactUs)
+	router.HandleFunc(URLDelivery, e.delivery)
+	router.HandleFunc(URLContact, e.contact)
 	e.router = router
 	return e
 }
@@ -131,12 +131,12 @@ func (e *EMarket) handleFavicon(w http.ResponseWriter, r *http.Request) {
 	e.handleCustomFile("/static/favicon.ico", w, r)
 }
 
-func (e *EMarket) Delivery(w http.ResponseWriter, r *http.Request) {
+func (e *EMarket) delivery(w http.ResponseWriter, r *http.Request) {
 	p := EMarketPage{Title: TitleDelivery, CurrentPage: PageDelivery}
 	html.AppPage.Execute(w, p)
 }
 
-func (e *EMarket) ContactUs(w http.ResponseWriter, r *http.Request) {
+func (e *EMarket) contact(w http.ResponseWriter, r *http.Request) {
 	p := EMarketPage{Title: TitleContact, CurrentPage: PageContact}
 	html.AppPage.Execute(w, p)
 }
