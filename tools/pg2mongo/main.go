@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readconcern"
@@ -29,13 +29,15 @@ const (
 var client *mongo.Client
 
 type Product struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty"`
-	Title       string             `bson:"title"`
-	Price       int                `bson:"price"`
-	Gallery     [][]byte           `bson:"gallery"`
-	Enable      bool               `bson:"enable"`
-	Description string             `bson:"description"`
-	Quantity    int                `bson:"quantity"`
+	ID          string `bson:"_id,omitempty"`
+	Title       string `bson:"title"`
+	Price       int    `bson:"price"`
+	Gallery     []byte `bson:"thumb"`
+	Enable      bool   `bson:"enable"`
+	Description string `bson:"description"`
+	Quantity    int    `bson:"quantity"`
+	OldID       int    `bson:"oldid"`
+	OldImgName  string `bson:"oldimgfile"`
 }
 
 func main() {
@@ -56,7 +58,7 @@ func main() {
 		log.Fatalf("ping: %v\n", err)
 	}
 
-	rows, err := db.Query(`SELECT title,gallery,price,max_count,enable,description FROM products`)
+	rows, err := db.Query(`SELECT id,title,gallery,price,max_count,enable,description FROM products`)
 
 	if err != nil {
 		log.Fatal(err)
@@ -74,8 +76,9 @@ func main() {
 		var maxCount *int
 		var enable *bool
 		var description *string
+		var oldid *int
 
-		err = rows.Scan(&title, &galleryData, &price, &maxCount, &enable, &description)
+		err = rows.Scan(&oldid, &title, &galleryData, &price, &maxCount, &enable, &description)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -84,6 +87,10 @@ func main() {
 		err = json.Unmarshal(galleryData, &gallery)
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if oldid == nil {
+			log.Fatal("id cannot be nil")
 		}
 
 		initString := func() *string {
@@ -114,7 +121,7 @@ func main() {
 			description = initString()
 		}
 
-		fmt.Printf("%v %v %v %v %v\n", *title, gallery, *price, *maxCount, *enable)
+		fmt.Printf("%v %v %v %v %v %v\n", *oldid, *title, gallery, *price, *maxCount, *enable)
 		blobs := make([][]byte, 0)
 		for _, file := range gallery {
 			image := "/home/alek/emarket_files/gallery/" + file
@@ -134,16 +141,23 @@ func main() {
 			}
 		}
 
+		if len(blobs) != 1 {
+			log.Fatal("more then 1 image")
+		}
+
 		product := Product{
 			Title:       *title,
 			Price:       int(*price),
-			Gallery:     blobs,
+			Gallery:     blobs[0],
 			Enable:      *enable,
 			Description: *description,
 			Quantity:    *maxCount,
+			OldID:       *oldid,
+			ID:          fmt.Sprint(uuid.New()),
+			OldImgName:  gallery[0],
 		}
 
-		collection := client.Database("mydb").Collection("test")
+		collection := client.Database("emarket").Collection("products")
 		_, err = collection.InsertOne(context.Background(), product)
 
 		if err != nil {

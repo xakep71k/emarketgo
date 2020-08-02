@@ -1,0 +1,166 @@
+.at-center, .pageHeader, .contact-page, .productThumb {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 90vh;
+}
+
+.respH1, .pageHeader {
+  font-size: 1.9em;
+  font-weight: 400;
+  margin-bottom: 0.5em;
+}
+
+.pageHeader {
+  height: auto;
+  margin-bottom: 0.5em;
+}
+
+
+#service-delivery_terms .text {
+    margin: auto;
+    margin-top: 10vw;
+    max-width: 30em;
+    font-size: 1.5em;
+}
+
+.contact-page {
+  height: auto;
+  margin-top: 10vw;
+}
+
+.contact-page .contacts * {
+  border-width: 0px;
+  font-size: 1.2em;
+}
+
+.contact-page .telegram, .contact-page .telegram:hover {
+  color: #007bff;
+}
+
+.contact-page .whatsapp, .contact-page .whatsapp:hover {
+  color: green;
+}
+
+.contact-page .viber, .contact-page .viber:hover {
+  color: #990099;
+}
+
+.contact-page .email, .contact-page .email:hover {
+  color: #ff7200;
+}
+
+.contact-page .phone, .contact-page .phone:hover {
+  color: black;
+}
+
+.contact-page .nolink:hover {
+  text-decoration: underline;
+}
+
+.nolink {
+    text-decoration: none;
+}
+
+.product-absent, .product-cart {
+  font-size: 1.8em;
+}
+
+.product-absent {
+  float: left;
+}
+
+.product-cart {
+  float: right;
+}
+
+.product-absent, .product-cart:hover {
+  cursor: pointer;
+}
+
+.productsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+@media all and (min-device-width: 0px) {
+  .productThumb {
+    width: 45vw;
+    height: 63.6364vw;
+  }
+}
+
+@media all and (min-device-width: 500px) {
+  .productThumb {
+    width: 30vw;
+    height: 42.4243vw;
+  }
+}
+
+@media all and (min-device-width: 800px) {
+  .productThumb {
+    width: 23vw;
+    height: 32.5253vw;
+  }
+}
+
+@media all and (min-device-width: 1025px) {
+  .productThumb {
+    width: 228px;
+    height: 322.4243px;
+  }
+}
+
+@media all and (min-device-width: 1300px) {
+  .productThumb {
+    width: 206px;
+    height: 291.3132px;
+  }
+
+  .main-container {
+    max-width: 1130px;
+  }
+}
+
+@media all and (min-device-width: 1920px) {
+  .productThumb {
+    width: 216px;
+    height: 305.4546px;
+  }
+
+  .main-container {
+    max-width: 1170px;
+  }
+}
+
+.main-container {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.productCard {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  margin-top: 0em;
+  margin-bottom: 1.5em;
+  line-height: auto;
+}
+
+.adminThumbIcon {
+  width: calc(297px/4);
+  height: calc(420px/4);
+}
+
+.massEditDescription {
+  overflow: auto !important;
+  resize: vertical !important;
+}
+
+.card-body {
+  padding: 18px;
+}
+
