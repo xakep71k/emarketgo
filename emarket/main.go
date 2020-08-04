@@ -49,8 +49,53 @@ type Page struct {
 	PageTitle   string
 }
 
+type ProductPageList struct {
+	First       bool
+	Last        bool
+	Index       int
+	Products    []*Product
+	PageNumbers []int
+	MaxPages    int
+}
+
+func NewProductPageList(index int, maxPages int, products []*Product) *ProductPageList {
+	p := &ProductPageList{
+		Index:    index,
+		First:    index == 0,
+		Last:     maxPages == 0 || maxPages == index+1,
+		Products: products,
+		MaxPages: maxPages,
+	}
+
+	min := func(x, y int) int {
+		if x > y {
+			return y
+		}
+		return x
+	}
+
+	pageNumbers := []int{index}
+	prepend := true
+	iPre := index - 1
+	iApp := index + 1
+	for len(pageNumbers) < min(maxPages, 5) {
+		if prepend && iPre >= 0 {
+			pageNumbers = append([]int{iPre}, pageNumbers...)
+			iPre--
+		} else if iApp < maxPages {
+			pageNumbers = append(pageNumbers, iApp)
+			iApp++
+		}
+		prepend = !prepend
+	}
+
+	p.PageNumbers = pageNumbers
+	return p
+}
+
 func NewHomePage(body string) *Page {
 	p := &Page{
+		ID:          "magazines-index",
 		Title:       "Журналы",
 		CurrentPage: PageHome,
 		Body:        body,
@@ -110,22 +155,39 @@ type EMarket struct {
 	productsIDHash       map[string]*Product
 	productsFileNameHash map[string]*Product
 	productsOldIDHash    map[string]*Product
-	productPages         []string
+	productPagesHtml     []string
+	productPages         [][]*Product
 }
 
-func buildProductPages(productPages [][]*Product) []string {
+func buildHtmlProductPages(productPages [][]*Product) []string {
 	pages := make([]string, 0)
-	for _, page := range productPages {
-		templ, err := template.New("product page").Parse(html.ProductList)
+	funcMap := template.FuncMap{
+		"add": func(a int, b int) int {
+			return a + b
+		},
+	}
+	generate := func(name, templateStr string, input interface{}) string {
+		templ, err := template.New(name).Funcs(funcMap).Parse(templateStr)
 		if err != nil {
-			panic(err)
+			panic(fmt.Sprintf("%v %v", name, err))
 		}
 
-		var tpl bytes.Buffer
-		if err := templ.Execute(&tpl, page); err != nil {
-			panic(err)
+		var buf bytes.Buffer
+		if err := templ.Execute(&buf, input); err != nil {
+			panic(fmt.Sprintf("%v %v", name, err))
 		}
-		pages = append(pages, tpl.String())
+
+		return buf.String()
+	}
+
+	maxPages := len(productPages)
+	if maxPages == 0 {
+		panic("there are no any products")
+	}
+	for index, products := range productPages {
+		plist := generate("product list", html.ProductList, products)
+		pagination := generate("pagination", html.Pagination, NewProductPageList(index, maxPages, products))
+		pages = append(pages, plist+pagination)
 	}
 	return pages
 }
@@ -163,13 +225,14 @@ func NewEMarket(rootDir string) (*EMarket, error) {
 		e.productsFileNameHash[p.OldImgName] = p
 	}
 
-	e.productPages = buildProductPages(productPages)
+	e.productPages = productPages
+	e.productPagesHtml = buildHtmlProductPages(productPages)
 
 	e.Pages = map[string]*Page{
 		"contact":  NewContactPage(),
 		"delivery": NewDeliveryPage(),
 		"notfound": NewNotFoundPage(),
-		"home":     NewHomePage(e.productPages[0]),
+		"home":     NewHomePage(e.productPagesHtml[0]),
 	}
 
 	e.setupRouter()
@@ -205,6 +268,21 @@ func (e *EMarket) setupRouter() {
 				w.Write(e.productsFileNameHash[key].Thumb)
 			})
 		}(file)
+	}
+
+	for i, page := range e.productPagesHtml {
+		func(index int, page string) {
+			url := fmt.Sprintf("/zhurnaly/stranitsa/%v", i+1)
+			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
+				p := &Page{
+					ID:          "magazines-index",
+					Title:       "Журналы",
+					CurrentPage: PageHome,
+					Body:        page,
+				}
+				html.AppPage.Execute(w, p)
+			})
+		}(i, page)
 	}
 
 	e.router = router
@@ -254,7 +332,7 @@ func (e *EMarket) home(w http.ResponseWriter, r *http.Request) {
 	html.AppPage.Execute(w, e.Pages["home"])
 }
 
-func (e *EMarket) handleCustomFile(filename string, w http.ResponseWriter, r *http.Request) {
+func (e *EMarket) handleSpecifiedFile(filename string, w http.ResponseWriter, r *http.Request) {
 	body, err := readFile(e.rootDir + filename)
 	if err == nil {
 		w.Header().Set("Content-Type", e.content.DetectType(r.URL.Path))
@@ -265,7 +343,7 @@ func (e *EMarket) handleCustomFile(filename string, w http.ResponseWriter, r *ht
 }
 
 func (e *EMarket) handleFile(w http.ResponseWriter, r *http.Request) {
-	e.handleCustomFile(r.URL.Path, w, r)
+	e.handleSpecifiedFile(r.URL.Path, w, r)
 }
 
 func (e *EMarket) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -273,7 +351,7 @@ func (e *EMarket) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *EMarket) handleFavicon(w http.ResponseWriter, r *http.Request) {
-	e.handleCustomFile("/static/favicon.ico", w, r)
+	e.handleSpecifiedFile("/static/favicon.ico", w, r)
 }
 
 func (e *EMarket) delivery(w http.ResponseWriter, r *http.Request) {
@@ -338,5 +416,6 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
+	fmt.Println("started")
 	log.Fatal(srv.ListenAndServe())
 }
