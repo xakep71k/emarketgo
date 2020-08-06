@@ -1,7 +1,7 @@
 package html
 
 var ProductList = `
-<h1 class="pageHeader">Журналы и выкройки для шитья</h1>
+<h1 class="pageHeader text-center">Журналы и выкройки для шитья</h1>
 <div class="main-container">
     <div class="productsContainer" id="products">
         {{range .}}
@@ -27,6 +27,13 @@ var ProductList = `
 `
 
 var Pagination = `
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item">Журналы</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Страница {{add .Index 1}}</li>
+  </ol>
+</nav>
+{{.ListHTML}}
 <div id="emarketPagination">
     <nav aria-label="page product navigation">
 	<ul class="pagination">

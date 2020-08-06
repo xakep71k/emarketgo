@@ -1,7 +1,7 @@
 package html
 
 var Delivery = `
-<h1 class="pageHeader">Условия доставки</h1>
+<h1 class="pageHeader text-center">Условия доставки</h1>
 <div>
 <ul class="text">
     <li>Бесплатная доставка по Москве до метро Кунцевская, Молодёжная и Водный стадион.</li>

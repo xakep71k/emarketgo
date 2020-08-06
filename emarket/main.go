@@ -56,15 +56,17 @@ type ProductPageList struct {
 	Products    []*Product
 	PageNumbers []int
 	MaxPages    int
+	ListHTML    string
 }
 
-func NewProductPageList(index int, maxPages int, products []*Product) *ProductPageList {
+func NewProductPageList(index int, maxPages int, products []*Product, listHtml string) *ProductPageList {
 	p := &ProductPageList{
 		Index:    index,
 		First:    index == 0,
 		Last:     maxPages == 0 || maxPages == index+1,
 		Products: products,
 		MaxPages: maxPages,
+		ListHTML: listHtml,
 	}
 
 	min := func(x, y int) int {
@@ -186,19 +188,13 @@ func buildHtmlProductPages(productPages [][]*Product) []string {
 	}
 	for index, products := range productPages {
 		plist := generate("product list", html.ProductList, products)
-		pagination := generate("pagination", html.Pagination, NewProductPageList(index, maxPages, products))
-		pages = append(pages, plist+pagination)
+		pagination := generate("pagination", html.Pagination, NewProductPageList(index, maxPages, products, plist))
+		pages = append(pages, pagination)
 	}
 	return pages
 }
 
-func NewEMarket(rootDir string) (*EMarket, error) {
-	products, err := loadProducts()
-
-	if err != nil {
-		return nil, err
-	}
-
+func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
 	sort.SliceStable(products, func(i, j int) bool {
 		return products[i].Title < products[j].Title
 	})
@@ -298,12 +294,24 @@ func (c *Content) DetectType(filename string) string {
 	panic(fmt.Sprintf("unknown type %v", filename))
 }
 
-func loadProducts() ([]*Product, error) {
+func loadProducts(mongoDataPath string) ([]*Product, error) {
+	/*
+		mongo := db.NewDockerMongo(mongoDataPath)
+
+		if err := mongo.Start(); err != nil {
+			return nil, err
+		}
+
+		defer mongo.Stop()
+	*/
+
 	client, err := db.NewMongoClient()
 
 	if err != nil {
 		return nil, err
 	}
+
+	defer client.Disconnect(nil)
 
 	collection := client.Database("emarket").Collection("products")
 	ctx := db.DefaultContext()
@@ -382,15 +390,27 @@ func readFile(filename string) ([]byte, error) {
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Printf("Usage: %s --web-root <path>\n", os.Args[0])
+	if len(os.Args) != 6 {
+		fmt.Printf("Usage: %s --web-root <path> --listen <ip:port> --mongo-data <path>\n", os.Args[0])
 		os.Exit(1)
 	}
 	webRootOpt := flag.String("web-root", "", "<path>")
+	listenOpt := flag.String("listen", "", "<ip:port>")
+	mongoDataOpt := flag.String("mongo-data", "", "<path>")
 	flag.Parse()
 
 	if webRootOpt == nil || *webRootOpt == "" {
 		fmt.Println("web root not specified")
+		os.Exit(1)
+	}
+
+	if listenOpt == nil || *listenOpt == "" {
+		fmt.Println("listen ip:port not specified")
+		os.Exit(1)
+	}
+
+	if mongoDataOpt == nil || *mongoDataOpt == "" {
+		fmt.Println("listen ip:port not specified")
 		os.Exit(1)
 	}
 
@@ -402,7 +422,14 @@ func main() {
 		return
 	}
 
-	emarket, err := NewEMarket(webRoot)
+	products, err := loadProducts(*mongoDataOpt)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	emarket, err := NewEMarket(webRoot, products)
 
 	if err != nil {
 		log.Fatal(err)
@@ -410,7 +437,7 @@ func main() {
 
 	srv := &http.Server{
 		Handler:      emarket,
-		Addr:         "127.0.0.1:8080",
+		Addr:         *listenOpt,
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 		IdleTimeout:  60 * time.Second,
