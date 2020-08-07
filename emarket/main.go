@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"text/template"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -39,6 +38,7 @@ type Product struct {
 	Quantity    int    `bson:"quantity"`
 	OldID       int    `bson:"oldid"`
 	OldImgName  string `bson:"oldimgfile"`
+	Index       int    `bson:"-"`
 }
 
 type Page struct {
@@ -57,6 +57,12 @@ type ProductPageList struct {
 	PageNumbers []int
 	MaxPages    int
 	ListHTML    string
+}
+
+func (p *Page) HTMLData() []byte {
+	buf := bytes.NewBuffer(make([]byte, 0))
+	html.AppPage.Execute(buf, p)
+	return buf.Bytes()
 }
 
 func NewProductPageList(index int, maxPages int, products []*Product, listHtml string) *ProductPageList {
@@ -130,6 +136,24 @@ func NewNotFoundPage() *Page {
 	}
 }
 
+func NewMazineListPage(body string) *Page {
+	return &Page{
+		ID:          "magazines-index",
+		Title:       "Журналы",
+		CurrentPage: PageHome,
+		Body:        body,
+	}
+}
+
+func NewProductPage(body, title string) *Page {
+	return &Page{
+		ID:          "magazines-show",
+		Title:       title,
+		CurrentPage: PageNo,
+		Body:        body,
+	}
+}
+
 type Content struct {
 	mytype map[string]string
 }
@@ -153,7 +177,7 @@ type EMarket struct {
 	rootDir              string
 	content              *Content
 	router               *http.ServeMux
-	Pages                map[string]*Page
+	Pages                map[string][]byte
 	productsIDHash       map[string]*Product
 	productsFileNameHash map[string]*Product
 	productsOldIDHash    map[string]*Product
@@ -163,32 +187,15 @@ type EMarket struct {
 
 func buildHtmlProductPages(productPages [][]*Product) []string {
 	pages := make([]string, 0)
-	funcMap := template.FuncMap{
-		"add": func(a int, b int) int {
-			return a + b
-		},
-	}
-	generate := func(name, templateStr string, input interface{}) string {
-		templ, err := template.New(name).Funcs(funcMap).Parse(templateStr)
-		if err != nil {
-			panic(fmt.Sprintf("%v %v", name, err))
-		}
-
-		var buf bytes.Buffer
-		if err := templ.Execute(&buf, input); err != nil {
-			panic(fmt.Sprintf("%v %v", name, err))
-		}
-
-		return buf.String()
-	}
-
 	maxPages := len(productPages)
+
 	if maxPages == 0 {
 		panic("there are no any products")
 	}
+
 	for index, products := range productPages {
-		plist := generate("product list", html.ProductList, products)
-		pagination := generate("pagination", html.Pagination, NewProductPageList(index, maxPages, products, plist))
+		plist := html.Generate("product list", html.ProductList, products)
+		pagination := html.Generate("pagination", html.Pagination, NewProductPageList(index, maxPages, products, plist))
 		pages = append(pages, pagination)
 	}
 	return pages
@@ -215,6 +222,7 @@ func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
 			productPages = append(productPages, make([]*Product, 0))
 		}
 
+		p.Index = iPage
 		productPages[iPage] = append(productPages[iPage], p)
 		e.productsIDHash[p.ID] = p
 		e.productsOldIDHash[fmt.Sprintf("%v", p.OldID)] = p
@@ -224,11 +232,11 @@ func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
 	e.productPages = productPages
 	e.productPagesHtml = buildHtmlProductPages(productPages)
 
-	e.Pages = map[string]*Page{
-		"contact":  NewContactPage(),
-		"delivery": NewDeliveryPage(),
-		"notfound": NewNotFoundPage(),
-		"home":     NewHomePage(e.productPagesHtml[0]),
+	e.Pages = map[string][]byte{
+		"contact":  NewContactPage().HTMLData(),
+		"delivery": NewDeliveryPage().HTMLData(),
+		"notfound": NewNotFoundPage().HTMLData(),
+		"home":     NewHomePage(e.productPagesHtml[0]).HTMLData(),
 	}
 
 	e.setupRouter()
@@ -237,48 +245,66 @@ func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
 
 func (e *EMarket) setupRouter() {
 	router := http.NewServeMux()
-	router.HandleFunc("/favicon.ico", e.handleFavicon)
-	router.HandleFunc("/bootstrap/", e.handleFile)
-	router.HandleFunc("/fontawesome/", e.handleFile)
-	router.HandleFunc("/static/", e.handleFile)
+	router.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		e.handleSpecifiedFile("/static/favicon.ico", w, r)
+	})
+	handleFile := func(w http.ResponseWriter, r *http.Request) {
+		e.handleSpecifiedFile(r.URL.Path, w, r)
+	}
+	router.HandleFunc("/bootstrap/", handleFile)
+	router.HandleFunc("/fontawesome/", handleFile)
+	router.HandleFunc("/static/", handleFile)
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			e.notFound(w, r)
 		} else {
-			e.home(w, r)
+			WriteResponse(w, r.URL.Path, e.Pages["home"])
 		}
 	})
-	router.HandleFunc("/dostavka", e.delivery)
-	router.HandleFunc("/kontakty", e.contact)
-	for id := range e.productsIDHash {
-		func(key string) {
-			router.HandleFunc("/product/image/"+key, func(w http.ResponseWriter, r *http.Request) {
-				w.Write(e.productsIDHash[key].Thumb)
+	router.HandleFunc("/dostavka", func(w http.ResponseWriter, r *http.Request) {
+		WriteResponse(w, r.URL.Path, e.Pages["delivery"])
+	})
+	router.HandleFunc("/kontakty", func(w http.ResponseWriter, r *http.Request) {
+		WriteResponse(w, r.URL.Path, e.Pages["contact"])
+	})
+
+	for key := range e.productsIDHash {
+		func(id string) {
+			url := "/product/image/" + id
+			htmlData := e.productsIDHash[id].Thumb
+			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
+				WriteResponse(w, r.URL.Path, htmlData)
 			})
-		}(id)
+		}(key)
+
+		func(id string) {
+			url := "/zhurnaly/" + id
+			product := e.productsIDHash[id]
+			body := html.Generate("show product", html.Product, product)
+			htmlData := NewProductPage(body, product.Title).HTMLData()
+			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
+				WriteResponse(w, r.URL.Path, htmlData)
+			})
+		}(key)
 	}
 
-	for file := range e.productsFileNameHash {
-		func(key string) {
-			router.HandleFunc("/thumbs/magazine/gallery/"+key, func(w http.ResponseWriter, r *http.Request) {
-				w.Write(e.productsFileNameHash[key].Thumb)
+	for key := range e.productsFileNameHash {
+		func(id string) {
+			url := "/thumbs/magazine/gallery/" + id
+			htmlData := e.productsFileNameHash[id].Thumb
+			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
+				WriteResponse(w, r.URL.Path, htmlData)
 			})
-		}(file)
+		}(key)
 	}
 
 	for i, page := range e.productPagesHtml {
-		func(index int, page string) {
+		func(index int, htmlData []byte) {
 			url := fmt.Sprintf("/zhurnaly/stranitsa/%v", i+1)
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
-				p := &Page{
-					ID:          "magazines-index",
-					Title:       "Журналы",
-					CurrentPage: PageHome,
-					Body:        page,
-				}
-				html.AppPage.Execute(w, p)
+				WriteResponse(w, r.URL.Path, htmlData)
 			})
-		}(i, page)
+		}(i, NewMazineListPage(page).HTMLData())
 	}
 
 	e.router = router
@@ -292,6 +318,12 @@ func (c *Content) DetectType(filename string) string {
 	}
 
 	panic(fmt.Sprintf("unknown type %v", filename))
+}
+
+func WriteResponse(w http.ResponseWriter, path string, data []byte) {
+	if _, err := w.Write(data); err != nil {
+		fmt.Printf("%v %v\n", path, err)
+	}
 }
 
 func loadProducts(mongoDataPath string) ([]*Product, error) {
@@ -333,41 +365,21 @@ func (e *EMarket) notFound(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Printf("not found %v\n", r.URL.Path)
-	html.AppPage.Execute(w, e.Pages["notfound"])
-}
-
-func (e *EMarket) home(w http.ResponseWriter, r *http.Request) {
-	html.AppPage.Execute(w, e.Pages["home"])
+	WriteResponse(w, r.URL.Path, e.Pages["notfound"])
 }
 
 func (e *EMarket) handleSpecifiedFile(filename string, w http.ResponseWriter, r *http.Request) {
 	body, err := readFile(e.rootDir + filename)
 	if err == nil {
 		w.Header().Set("Content-Type", e.content.DetectType(r.URL.Path))
-		w.Write(body)
+		WriteResponse(w, r.URL.Path, body)
 	} else {
 		e.notFound(w, r)
 	}
 }
 
-func (e *EMarket) handleFile(w http.ResponseWriter, r *http.Request) {
-	e.handleSpecifiedFile(r.URL.Path, w, r)
-}
-
 func (e *EMarket) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	e.router.ServeHTTP(w, r)
-}
-
-func (e *EMarket) handleFavicon(w http.ResponseWriter, r *http.Request) {
-	e.handleSpecifiedFile("/static/favicon.ico", w, r)
-}
-
-func (e *EMarket) delivery(w http.ResponseWriter, r *http.Request) {
-	html.AppPage.Execute(w, e.Pages["delivery"])
-}
-
-func (e *EMarket) contact(w http.ResponseWriter, r *http.Request) {
-	html.AppPage.Execute(w, e.Pages["contact"])
 }
 
 func readFile(filename string) ([]byte, error) {

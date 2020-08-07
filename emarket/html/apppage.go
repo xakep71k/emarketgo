@@ -8,7 +8,7 @@ var AppPage htmlTemplate
 
 func init() {
 	var err error
-	AppPage.template, err = template.New("AppPage").Parse(appPage)
+	AppPage.template, err = template.New("app page").Parse(appPage)
 
 	if err != nil {
 		panic(err)
