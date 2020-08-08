@@ -30,7 +30,7 @@ var Product = `
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
     <li class="breadcrumb-item">Журналы</li>
-        <li class="breadcrumb-item"><a href="/zhurnaly/stranitsa/{{add .Index 1}}">Страница {{add .Index 1}}</a></li>
+        <li class="breadcrumb-item"><a href="/zhurnaly/stranitsa/{{.PageNum}}">Страница {{.PageNum}}</a></li>
     <li class="breadcrumb-item active" aria-current="page">{{.Title}}</li>
   </ol>
 </nav>
@@ -61,9 +61,6 @@ var Product = `
 </div>
 <br>
 <div class="at-center" style="height: auto;">
-<!--
-<button class="btn" onclick="javascript:window.history.back();"><i class="fas fa-arrow-alt-circle-left"></i>&nbsp;&nbsp;На предыдущую страницу</button>
--->
-<a href="/zhurnaly/stranitsa/{{add .Index 1}}" class="btn"><i class="fas fa-arrow-alt-circle-left"></i>&nbsp;&nbsp;К списку журналов</a>
+<a href="/zhurnaly/stranitsa/{{.PageNum}}" class="btn"><i class="fas fa-arrow-alt-circle-left"></i>&nbsp;&nbsp;К списку журналов</a>
 </div>
 `

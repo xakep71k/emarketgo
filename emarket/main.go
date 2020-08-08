@@ -38,7 +38,7 @@ type Product struct {
 	Quantity    int    `bson:"quantity"`
 	OldID       int    `bson:"oldid"`
 	OldImgName  string `bson:"oldimgfile"`
-	Index       int    `bson:"-"`
+	PageNum     int    `bson:"-"`
 }
 
 type Page struct {
@@ -52,7 +52,7 @@ type Page struct {
 type ProductPageList struct {
 	First       bool
 	Last        bool
-	Index       int
+	PageNum     int
 	Products    []*Product
 	PageNumbers []int
 	MaxPages    int
@@ -67,7 +67,7 @@ func (p *Page) HTMLData() []byte {
 
 func NewProductPageList(index int, maxPages int, products []*Product, listHtml string) *ProductPageList {
 	p := &ProductPageList{
-		Index:    index,
+		PageNum:  index + 1,
 		First:    index == 0,
 		Last:     maxPages == 0 || maxPages == index+1,
 		Products: products,
@@ -174,15 +174,10 @@ func NewContent() *Content {
 }
 
 type EMarket struct {
-	rootDir              string
-	content              *Content
-	router               *http.ServeMux
-	Pages                map[string][]byte
-	productsIDHash       map[string]*Product
-	productsFileNameHash map[string]*Product
-	productsOldIDHash    map[string]*Product
-	productPagesHtml     []string
-	productPages         [][]*Product
+	rootDir string
+	content *Content
+	router  *http.ServeMux
+	Pages   map[string][]byte
 }
 
 func buildHtmlProductPages(productPages [][]*Product) []string {
@@ -201,20 +196,7 @@ func buildHtmlProductPages(productPages [][]*Product) []string {
 	return pages
 }
 
-func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
-	sort.SliceStable(products, func(i, j int) bool {
-		return products[i].Title < products[j].Title
-	})
-
-	e := &EMarket{
-		rootDir:              rootDir,
-		content:              NewContent(),
-		productsIDHash:       make(map[string]*Product),
-		productsOldIDHash:    make(map[string]*Product),
-		productsFileNameHash: make(map[string]*Product),
-	}
-
-	var productPages [][]*Product
+func collectProductsPages(products []*Product) (productPages [][]*Product) {
 	iPage := -1
 	for i, p := range products {
 		if (i % pageSize) == 0 {
@@ -222,28 +204,45 @@ func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
 			productPages = append(productPages, make([]*Product, 0))
 		}
 
-		p.Index = iPage
 		productPages[iPage] = append(productPages[iPage], p)
-		e.productsIDHash[p.ID] = p
-		e.productsOldIDHash[fmt.Sprintf("%v", p.OldID)] = p
-		e.productsFileNameHash[p.OldImgName] = p
 	}
 
-	e.productPages = productPages
-	e.productPagesHtml = buildHtmlProductPages(productPages)
+	return
+}
 
+func setPageNum(productPages [][]*Product) {
+	for index, products := range productPages {
+		for _, p := range products {
+			p.PageNum = index + 1
+		}
+	}
+}
+
+func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
+	sort.SliceStable(products, func(i, j int) bool {
+		return products[i].Title < products[j].Title
+	})
+
+	e := &EMarket{
+		rootDir: rootDir,
+		content: NewContent(),
+	}
+
+	productPages := collectProductsPages(products)
+	setPageNum(productPages)
+	productPagesHtml := buildHtmlProductPages(productPages)
 	e.Pages = map[string][]byte{
 		"contact":  NewContactPage().HTMLData(),
 		"delivery": NewDeliveryPage().HTMLData(),
 		"notfound": NewNotFoundPage().HTMLData(),
-		"home":     NewHomePage(e.productPagesHtml[0]).HTMLData(),
+		"home":     NewHomePage(productPagesHtml[0]).HTMLData(),
 	}
 
-	e.setupRouter()
+	e.setupRouter(products, productPagesHtml)
 	return e, nil
 }
 
-func (e *EMarket) setupRouter() {
+func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 	router := http.NewServeMux()
 	router.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		e.handleSpecifiedFile("/static/favicon.ico", w, r)
@@ -268,37 +267,41 @@ func (e *EMarket) setupRouter() {
 		WriteResponse(w, r.URL.Path, e.Pages["contact"])
 	})
 
-	for key := range e.productsIDHash {
-		func(id string) {
-			url := "/product/image/" + id
-			htmlData := e.productsIDHash[id].Thumb
+	for _, product := range products {
+		magazineURL := "/zhurnaly/" + product.ID
+		magazineImageURL := "/product/image/" + product.ID
+
+		func(url string, product *Product) {
+			htmlData := product.Thumb
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 				WriteResponse(w, r.URL.Path, htmlData)
 			})
-		}(key)
+		}(magazineImageURL, product)
 
-		func(id string) {
-			url := "/zhurnaly/" + id
-			product := e.productsIDHash[id]
+		func(newImgURL string, product *Product) {
+			url := fmt.Sprintf("/thumbs/magazine/gallery/%v", product.OldImgName)
+			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
+				http.Redirect(w, r, newImgURL, http.StatusMovedPermanently)
+			})
+		}(magazineImageURL, product)
+
+		func(url string, product *Product) {
 			body := html.Generate("show product", html.Product, product)
 			htmlData := NewProductPage(body, product.Title).HTMLData()
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 				WriteResponse(w, r.URL.Path, htmlData)
 			})
-		}(key)
-	}
+		}(magazineURL, product)
 
-	for key := range e.productsFileNameHash {
-		func(id string) {
-			url := "/thumbs/magazine/gallery/" + id
-			htmlData := e.productsFileNameHash[id].Thumb
-			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
-				WriteResponse(w, r.URL.Path, htmlData)
+		func(newURL string, product *Product) {
+			oldURL := fmt.Sprintf("/zhurnaly/%v", product.OldID)
+			router.HandleFunc(oldURL, func(w http.ResponseWriter, r *http.Request) {
+				http.Redirect(w, r, newURL, http.StatusMovedPermanently)
 			})
-		}(key)
+		}(magazineURL, product)
 	}
 
-	for i, page := range e.productPagesHtml {
+	for i, page := range productPagesHtml {
 		func(index int, htmlData []byte) {
 			url := fmt.Sprintf("/zhurnaly/stranitsa/%v", i+1)
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
