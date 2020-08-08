@@ -2,8 +2,8 @@ package main
 
 import (
 	"bytes"
-	"emarket/db"
 	"emarket/html"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -15,8 +15,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 const (
@@ -29,16 +27,16 @@ const (
 const pageSize = 30
 
 type Product struct {
-	ID          string `bson:"_id,omitempty"`
-	Title       string `bson:"title"`
-	Price       int    `bson:"price"`
-	Thumb       []byte `bson:"thumb"`
-	Enable      bool   `bson:"enable"`
-	Description string `bson:"description"`
-	Quantity    int    `bson:"quantity"`
-	OldID       int    `bson:"oldid"`
-	OldImgName  string `bson:"oldimgfile"`
-	PageNum     int    `bson:"-"`
+	ID          string `bson:"_id,omitempty" json:"id"`
+	Title       string `bson:"title" json:"title"`
+	Price       int    `bson:"price" json:"price"`
+	Thumb       []byte `bson:"thumb" json:"thumb"`
+	Enable      bool   `bson:"enable" json:"enable"`
+	Description string `bson:"description" json:"description"`
+	Quantity    int    `bson:"quantity" json:"quantity"`
+	OldID       int    `bson:"oldid" json:"oldid"`
+	OldImgName  string `bson:"oldimgfile" json:"oldimgfile"`
+	PageNum     int    `bson:"-" json:"-"`
 }
 
 type Page struct {
@@ -329,38 +327,23 @@ func WriteResponse(w http.ResponseWriter, path string, data []byte) {
 	}
 }
 
-func loadProducts(mongoDataPath string) ([]*Product, error) {
-	/*
-		mongo := db.NewDockerMongo(mongoDataPath)
+func loadProducts(dataPath string) (products []*Product, err error) {
+	data, err := ioutil.ReadFile(dataPath)
 
-		if err := mongo.Start(); err != nil {
-			return nil, err
+	if err != nil {
+		return products, err
+	}
+
+	var tmpProducts []*Product
+	if err := json.Unmarshal(data, &tmpProducts); err != nil {
+		return products, err
+	}
+
+	for _, product := range tmpProducts {
+		if product.Enable {
+			products = append(products, product)
 		}
-
-		defer mongo.Stop()
-	*/
-
-	client, err := db.NewMongoClient()
-
-	if err != nil {
-		return nil, err
 	}
-
-	defer client.Disconnect(nil)
-
-	collection := client.Database("emarket").Collection("products")
-	ctx := db.DefaultContext()
-	cursor, err := collection.Find(ctx, bson.M{"enable": true})
-
-	if err != nil {
-		return nil, err
-	}
-
-	products := make([]*Product, 0)
-	if err := cursor.All(ctx, &products); err != nil {
-		return nil, err
-	}
-
 	return products, nil
 }
 
@@ -406,12 +389,12 @@ func readFile(filename string) ([]byte, error) {
 
 func main() {
 	if len(os.Args) != 6 {
-		fmt.Printf("Usage: %s --web-root <path> --listen <ip:port> --mongo-data <path>\n", os.Args[0])
+		fmt.Printf("Usage: %s --web-root <path> --listen <ip:port> --data <path>\n", os.Args[0])
 		os.Exit(1)
 	}
 	webRootOpt := flag.String("web-root", "", "<path>")
 	listenOpt := flag.String("listen", "", "<ip:port>")
-	mongoDataOpt := flag.String("mongo-data", "", "<path>")
+	dataOpt := flag.String("data", "", "<path>")
 	flag.Parse()
 
 	if webRootOpt == nil || *webRootOpt == "" {
@@ -424,7 +407,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if mongoDataOpt == nil || *mongoDataOpt == "" {
+	if dataOpt == nil || *dataOpt == "" {
 		fmt.Println("listen ip:port not specified")
 		os.Exit(1)
 	}
@@ -437,7 +420,7 @@ func main() {
 		return
 	}
 
-	products, err := loadProducts(*mongoDataOpt)
+	products, err := loadProducts(*dataOpt)
 
 	if err != nil {
 		fmt.Println(err)
