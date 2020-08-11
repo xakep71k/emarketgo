@@ -208,3 +208,7 @@
   white-space: pre-wrap;
   font: inherit;
 }
+
+#service-history .productsContainer {
+  justify-content: flex-start;
+}

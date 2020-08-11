@@ -50,22 +50,26 @@ const appPage = `
                         <i class="fas fa-home"></i> Главная
                     </a>
                 </li>
+		<li class="nav-item">
+		    <a class="nav-link {{if eq .CurrentPage 4}} active {{end}}" href="/istoriya_prosmotrov">
+		        <i class="fas fa-eye"></i> Вы смотрели
+		    </a>
+		</li>
+
                 <li class="nav-item">
-                    <a class="nav-link {{if eq .CurrentPage 2}} active {{end}} "
-                        href="/dostavka">
+                    <a class="nav-link {{if eq .CurrentPage 2}} active {{end}}" href="/dostavka">
                         <i class="fas fa-shipping-fast"></i> Доставка
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{if eq .CurrentPage 3}} active {{end}} "
-                        href="/kontakty">
+                    <a class="nav-link {{if eq .CurrentPage 3}} active {{end}}" href="/kontakty">
                         <i class="fas fa-id-card"></i> Свяжитесь с нами
                     </a>
                 </li>
             </ul>
+        </div>
     </nav>
     {{.Body}}
 </body>
-
 </html>
 `

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -22,6 +23,7 @@ const (
 	PageHome
 	PageDelivery
 	PageContact
+	PageHistory
 )
 
 const pageSize = 30
@@ -127,6 +129,15 @@ func NewContactPage() *Page {
 	}
 }
 
+func NewHistoryPage() *Page {
+	return &Page{
+		ID:          "service-history",
+		Title:       "История просмотров",
+		CurrentPage: PageHistory,
+		Body:        html.History,
+	}
+}
+
 func NewNotFoundPage() *Page {
 	return &Page{
 		Title: "Страница не найдена",
@@ -162,6 +173,7 @@ func NewContent() *Content {
 		".js":     "application/javascript",
 		".css":    "text/css",
 		".ico":    "image/x-icon",
+		".gif":    "image/gif",
 		"js.map":  "application/octet-stream",
 		"css.map": "application/octet-stream",
 		".woff":   "font/woff",
@@ -172,10 +184,11 @@ func NewContent() *Content {
 }
 
 type EMarket struct {
-	rootDir string
-	content *Content
-	router  *http.ServeMux
-	Pages   map[string][]byte
+	rootDir     string
+	content     *Content
+	router      *http.ServeMux
+	Pages       map[string][]byte
+	ProductsMap map[string]*Product
 }
 
 func buildHtmlProductPages(productPages [][]*Product) []string {
@@ -187,7 +200,7 @@ func buildHtmlProductPages(productPages [][]*Product) []string {
 	}
 
 	for index, products := range productPages {
-		plist := html.Generate("product list", html.ProductList, products)
+		plist := html.Generate("product list", html.Products, products)
 		pagination := html.Generate("pagination", html.Pagination, NewProductPageList(index, maxPages, products, plist))
 		pages = append(pages, pagination)
 	}
@@ -222,8 +235,13 @@ func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
 	})
 
 	e := &EMarket{
-		rootDir: rootDir,
-		content: NewContent(),
+		rootDir:     rootDir,
+		content:     NewContent(),
+		ProductsMap: make(map[string]*Product, 0),
+	}
+
+	for _, product := range products {
+		e.ProductsMap[product.ID] = product
 	}
 
 	productPages := collectProductsPages(products)
@@ -234,6 +252,7 @@ func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
 		"delivery": NewDeliveryPage().HTMLData(),
 		"notfound": NewNotFoundPage().HTMLData(),
 		"home":     NewHomePage(productPagesHtml[0]).HTMLData(),
+		"history":  NewHistoryPage().HTMLData(),
 	}
 
 	e.setupRouter(products, productPagesHtml)
@@ -257,6 +276,9 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 		} else {
 			WriteResponse(w, r.URL.Path, e.Pages["home"])
 		}
+	})
+	router.HandleFunc("/istoriya_prosmotrov", func(w http.ResponseWriter, r *http.Request) {
+		WriteResponse(w, r.URL.Path, e.Pages["history"])
 	})
 	router.HandleFunc("/dostavka", func(w http.ResponseWriter, r *http.Request) {
 		WriteResponse(w, r.URL.Path, e.Pages["delivery"])
@@ -308,6 +330,44 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 		}(i, NewMazineListPage(page).HTMLData())
 	}
 
+	router.HandleFunc("/api/products", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			e.notFound(w, r)
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 1024*2)
+		defer r.Body.Close()
+		reqProducts := make([]string, 0)
+		if err := json.NewDecoder(r.Body).Decode(&reqProducts); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			WriteResponse(w, r.URL.Path, []byte(err.Error()))
+			return
+		}
+
+		var foundProducts []*Product
+		for _, id := range reqProducts {
+			if product, found := e.ProductsMap[id]; found {
+				foundProducts = append(foundProducts, product)
+			}
+		}
+
+		templ, err := template.New("product list").Parse(html.ProductList)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			WriteResponse(w, r.URL.Path, []byte(err.Error()))
+			return
+		}
+
+		buf := bytes.NewBuffer(make([]byte, 0))
+		if err := templ.Execute(buf, foundProducts); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			WriteResponse(w, r.URL.Path, []byte(err.Error()))
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		WriteResponse(w, r.URL.Path, buf.Bytes())
+	})
 	e.router = router
 }
 

@@ -1,0 +1,59 @@
+package html
+
+var History = `
+<h1 class="pageHeader">История просмотров</h1>
+<div class="at-center" id='historyPage'>
+    <img id="loader" alt="подождите, пожалуйста..." src="/static/loader100x100.gif" />
+</div>
+<script>
+  function getHistoryPage() {
+    return document.getElementById('historyPage')
+  }
+  function setNoContent() {
+    getHistoryPage().innerHTML = '<div class="text-center">здесь ничего нет</div>'
+  }
+  const key = "emarket.history.v1"
+  if (typeof (Storage) !== "undefined") {
+    let viewed = localStorage.getItem(key)
+    if (viewed != null && viewed.length != 0) {
+      fetch("/api/products",
+        {
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          method: "POST",
+          body: viewed
+        }).then(function (res) {
+          if (res.status == 200) {
+            res.text().then(function (text) {
+              getHistoryPage().innerHTML = text
+              let products = document.querySelectorAll("[data-product-id]");
+              if (products.length == 0) {
+                setNoContent()
+              } else {
+                getHistoryPage().classList.remove("at-center")
+              }
+              let dict = {}
+              for (let i = 0, max = products.length; i < max; i++) {
+                dict[products[i].getAttribute("data-product-id")] = true
+              }
+              let updateViewed = new Array()
+              viewed = JSON.parse(viewed)
+              for (let i = 0, max = viewed.length; i < max; i++) {
+                if (dict[viewed[i]]) {
+                  updateViewed.push(viewed[i])
+                }
+              }
+              localStorage.setItem(key, JSON.stringify(updateViewed))
+            })
+          } else {
+            setNoContent()
+          }
+        }).catch(function (res) {
+          setNoContent()
+        });
+    }
+  }
+</script>
+`

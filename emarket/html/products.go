@@ -1,7 +1,6 @@
 package html
 
 var ProductList = `
-<h1 class="pageHeader text-center">Журналы и выкройки для шитья</h1>
 <div class="main-container">
     <div class="productsContainer" id="products">
         {{range .}}
@@ -25,6 +24,10 @@ var ProductList = `
     </div>
 </div>
 `
+
+var Products = `
+<h1 class="pageHeader text-center">Журналы и выкройки для шитья</h1>
+` + ProductList
 
 var Product = `
 <nav aria-label="breadcrumb">
@@ -63,4 +66,32 @@ var Product = `
 <div class="at-center" style="height: auto;">
 <a href="/zhurnaly/stranitsa/{{.PageNum}}" class="btn"><i class="fas fa-arrow-alt-circle-left"></i>&nbsp;&nbsp;К списку журналов</a>
 </div>
+<script>
+    const key = "emarket.history.v1"
+    if (typeof (Storage) !== "undefined") {
+        let viewed = localStorage.getItem(key)
+        if (viewed == null) {
+            viewed = new Array()
+        } else {
+            viewed = JSON.parse(viewed)
+        }
+        const pid = "{{.ID}}"
+        let index = 0
+        do {
+            index = viewed.indexOf(pid)
+            if (index > -1) {
+                viewed.splice(index, 1)
+            } else {
+                break
+            }
+        } while (true)
+        viewed.unshift(pid)
+
+        const limit = 30
+        if (viewed.length > limit) {
+            viewed.splice(limit, viewed.length - limit)
+        }
+        localStorage.setItem(key, JSON.stringify(viewed))
+    }
+</script>
 `
