@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -383,7 +384,9 @@ func (c *Content) DetectType(filename string) string {
 
 func WriteResponse(w http.ResponseWriter, path string, data []byte) {
 	if _, err := w.Write(data); err != nil {
-		fmt.Printf("%v %v\n", path, err)
+		if !errors.Is(err, syscall.EPIPE) {
+			fmt.Printf("%v %v\n", path, err)
+		}
 	}
 }
 
