@@ -212,3 +212,26 @@
 #service-history .productsContainer {
   justify-content: flex-start;
 }
+
+.counter {
+    position: absolute;
+    line-height: 1.5em;
+    z-index: 2;
+    border-radius: 10em;
+    padding: 1px 7px;
+    background-color: #fe1212;
+    font-size: 11px;
+    color: #fff;
+    font-weight: 300;
+    box-sizing: border-box;
+}
+
+.navbar-toggler > .close {
+  display: inline;
+}
+
+.navbar-toggler.collapsed > .close,
+.navbar-toggler:not(.collapsed) > .navbar-toggler-icon,
+.navbar-toggler:not(.collapsed) > .counter {
+    display: none;
+}

@@ -1,7 +1,7 @@
 package html
 
 var Contact = `
-<h1 class="pageHeader text-center">Контакты</h1>
+<h1 class="pageHeader text-center">{{.Title}}</h1>
 <div class="contact-page">
     <h4 style="text-align: center;"><p>Связаться с нами можете любым удобным для Вас способом.</p><p>Мы рады Вам всегда! <i class="far fa-smile"></i></p></h4>
     <ul class="list-group contacts">

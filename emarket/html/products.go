@@ -1,7 +1,37 @@
 package html
 
-var ProductList = `
-<div class="main-container">
+var PutInCartFunc = `
+<script>
+  function putInCart(cart) {
+    if (typeof (Storage) !== "undefined") {
+      let inCart = localStorage.getItem("{{keyCart}}")
+      if (inCart == null) {
+        inCart = {}
+      } else {
+        inCart = JSON.parse(inCart)
+      }
+
+      const pid = cart.getAttribute("data-product-id")
+
+      cart.classList.remove("fa-shopping-cart")
+      cart.classList.remove("fa-cart-plus")
+      if(inCart[pid]) {
+        delete inCart[pid]
+        cart.classList.add("fa-shopping-cart")
+      } else {
+        inCart[pid] = true
+        cart.classList.add("fa-cart-plus")
+      }
+      
+      localStorage.setItem("{{keyCart}}", JSON.stringify(inCart))
+	  setCartCounter()
+    }
+  }
+</script>
+`
+
+var ProductList = PutInCartFunc + `
+<div class="main-container" onload="">
     <div class="productsContainer" id="products">
         {{range .}}
         <div class="card productCard">
@@ -17,7 +47,7 @@ var ProductList = `
                 {{else}}
                 <span>под заказ</span>
                 {{end}}
-                <i class="fas fa-shopping-cart product-cart" data-name="product-cart" data-product-id="{{.ID}}"></i>
+                <i onclick="putInCart(this)" class="fas fa-shopping-cart product-cart" data-name="product-cart" data-product-id="{{.ID}}"></i>
             </div>
         </div>
         {{end}}
@@ -25,11 +55,7 @@ var ProductList = `
 </div>
 `
 
-var Products = `
-<h1 class="pageHeader text-center">Журналы и выкройки для шитья</h1>
-` + ProductList
-
-var Product = `
+var Product = PutInCartFunc + `
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
     <li class="breadcrumb-item">Журналы</li>
@@ -54,7 +80,7 @@ var Product = `
                                     под заказ
 				{{end}}
                                 </b>
-                                <i class="fas fa-shopping-cart product-cart" data-name="product-cart" data-product-id="{{.ID}}"></i>
+                                <i onclick="putInCart(this)" class="fas fa-shopping-cart product-cart" data-name="product-cart" data-product-id="{{.ID}}"></i>
                             </p>
                         </div>
                         </div>
@@ -67,9 +93,8 @@ var Product = `
 <a href="/zhurnaly/stranitsa/{{.PageNum}}" class="btn"><i class="fas fa-arrow-alt-circle-left"></i>&nbsp;&nbsp;К списку журналов</a>
 </div>
 <script>
-    const key = "emarket.history.v1"
     if (typeof (Storage) !== "undefined") {
-        let viewed = localStorage.getItem(key)
+        let viewed = localStorage.getItem("{{keyHistory}}")
         if (viewed == null) {
             viewed = new Array()
         } else {
@@ -84,14 +109,14 @@ var Product = `
             } else {
                 break
             }
-        } while (true)
+        } while(true)
         viewed.unshift(pid)
 
         const limit = 30
         if (viewed.length > limit) {
             viewed.splice(limit, viewed.length - limit)
         }
-        localStorage.setItem(key, JSON.stringify(viewed))
+        localStorage.setItem("{{keyHistory}}", JSON.stringify(viewed))
     }
 </script>
 `

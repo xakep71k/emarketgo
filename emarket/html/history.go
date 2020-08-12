@@ -1,7 +1,7 @@
 package html
 
 var History = `
-<h1 class="pageHeader">История просмотров</h1>
+<h1 class="pageHeader">{{.Title}}</h1>
 <div class="at-center" id='historyPage'>
     <img id="loader" alt="подождите, пожалуйста..." src="/static/loader100x100.gif" />
 </div>
@@ -12,9 +12,8 @@ var History = `
   function setNoContent() {
     getHistoryPage().innerHTML = '<div class="text-center">здесь ничего нет</div>'
   }
-  const key = "emarket.history.v1"
   if (typeof (Storage) !== "undefined") {
-    let viewed = localStorage.getItem(key)
+    let viewed = localStorage.getItem("{{keyHistory}}")
     if (viewed != null && viewed.length != 0) {
       fetch("/api/products",
         {
@@ -33,6 +32,7 @@ var History = `
                 setNoContent()
               } else {
                 getHistoryPage().classList.remove("at-center")
+				setProductsInCart()
               }
               let dict = {}
               for (let i = 0, max = products.length; i < max; i++) {
@@ -45,7 +45,7 @@ var History = `
                   updateViewed.push(viewed[i])
                 }
               }
-              localStorage.setItem(key, JSON.stringify(updateViewed))
+              localStorage.setItem("{{keyHistory}}", JSON.stringify(updateViewed))
             })
           } else {
             setNoContent()
@@ -56,4 +56,4 @@ var History = `
     }
   }
 </script>
-`
+` + PutInCartFunc

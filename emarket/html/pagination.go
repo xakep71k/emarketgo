@@ -7,6 +7,7 @@ var Pagination = `
     <li class="breadcrumb-item active" aria-current="page">Страница {{.PageNum}}</li>
   </ol>
 </nav>
+<h1 class="pageHeader text-center">{{.Title}}</h1>
 {{.ListHTML}}
 {{$PrevPageNum := add .PageNum -1}}
 {{$NextPageNum := add .PageNum 1}}
