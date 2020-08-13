@@ -15,8 +15,7 @@ func init() {
 	}
 }
 
-const appPage = `
-<!DOCTYPE html>
+const appPage = `<!DOCTYPE html>
 <html lang="ru">
 
 <head>
@@ -24,12 +23,12 @@ const appPage = `
     <link href="/fontawesome/css/all.min.css" rel="stylesheet">
     <link href="/static/css/custom_bootstrap.css" rel="stylesheet">
     <link href="/static/css/app.css" rel="stylesheet">
-    <script src="/bootstrap/js/jquery-3.5.1.slim.min.js"></script>
+    <script src="/bootstrap/js/jquery-3.5.1.min.js"></script>
     <script src="/bootstrap/js/popper.min.js"></script>
     <script src="/bootstrap/js/bootstrap.min.js"></script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>{{ .Title }}</title>
+    <title>{{.Title}}</title>
 </head>
 
 <body id="{{.ID}}">

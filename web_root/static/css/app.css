@@ -235,3 +235,41 @@
 .navbar-toggler:not(.collapsed) > .counter {
     display: none;
 }
+
+#alertCart {
+  position: fixed;
+  top: 0px;
+  width: 100%;
+  z-index: 3;
+  margin: 0px;
+  opacity: 1;
+  color: #fff;
+  background: #00c851;
+  border-width: 0px;
+  display: none;
+  /*animation: disappear 5s 1;
+  animation-fill-mode: forwards;*/
+}
+
+#alertCart a {
+  color: #fff;
+}
+
+#alertCart .underlineLink {
+  text-decoration: underline;
+}
+
+/*@keyframes disappear {
+  0%{
+    opacity: 1;
+  }
+  100%{
+    display: none;
+    opacity: 0;
+  }
+}*/
+
+/*.alertAnimation:hover {
+  animation-play-state: paused;
+  opacity: 1;
+}*/
