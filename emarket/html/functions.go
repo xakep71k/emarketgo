@@ -37,6 +37,12 @@ func defaultTemplateFuncs() map[string]interface{} {
 		"alertCartRemove": func() string {
 			return alertCartRemove
 		},
+		"iterate": func(start int, end int) (res []int) {
+			for i := start; i <= end; i++ {
+				res = append(res, i)
+			}
+			return
+		},
 	}
 }
 

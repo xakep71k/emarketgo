@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -36,6 +37,12 @@ type Product struct {
 	OldID       int    `bson:"oldid" json:"oldid"`
 	OldImgName  string `bson:"oldimgfile" json:"oldimgfile"`
 	PageNum     int    `bson:"-" json:"-"`
+}
+
+type Cart struct {
+	Products   []*Product
+	Empty      bool
+	TotalPrice int
 }
 
 type Page struct {
@@ -171,11 +178,14 @@ func NewProductPage(body, title string) *Page {
 }
 
 func NewOrderPage() *Page {
-	return &Page{
+	p := &Page{
 		ID:          "orders-new",
 		Title:       "Корзина",
 		CurrentPage: PageNewOrder,
 	}
+
+	p.Body = html.Generate("cart page", html.NewOrder, p).String()
+	return p
 }
 
 type Content struct {
@@ -360,25 +370,70 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 1024*2)
 		defer r.Body.Close()
-		reqProducts := make([]string, 0)
-		if err := json.NewDecoder(r.Body).Decode(&reqProducts); err != nil {
+
+		foundProducts, err := e.readProducts(r.Body)
+
+		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			WriteResponse(w, r.URL.Path, []byte(err.Error()))
 			return
-		}
-
-		var foundProducts []*Product
-		for _, id := range reqProducts {
-			if product, found := e.ProductsMap[id]; found {
-				foundProducts = append(foundProducts, product)
-			}
 		}
 
 		buf := html.Generate("product list", html.ProductList, foundProducts)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		WriteResponse(w, r.URL.Path, buf.Bytes())
 	})
+
+	router.HandleFunc("/api/cart", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			e.notFound(w, r)
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 1024*2)
+		defer r.Body.Close()
+
+		foundProducts, err := e.readProducts(r.Body)
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			WriteResponse(w, r.URL.Path, []byte(err.Error()))
+			return
+		}
+
+		if len(foundProducts) != 0 {
+			c := Cart{
+				Products: foundProducts,
+				Empty:    len(foundProducts) == 0,
+			}
+
+			for _, p := range c.Products {
+				c.TotalPrice += p.Price
+			}
+
+			buf := html.Generate("cart list", html.OrderedProducts, c)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			WriteResponse(w, r.URL.Path, buf.Bytes())
+		} else {
+			WriteResponse(w, r.URL.Path, []byte{})
+		}
+	})
 	e.router = router
+}
+
+func (e *EMarket) readProducts(r io.Reader) ([]*Product, error) {
+	reqProducts := make([]string, 0)
+	if err := json.NewDecoder(r).Decode(&reqProducts); err != nil {
+		return nil, err
+	}
+
+	var foundProducts []*Product
+	for _, id := range reqProducts {
+		if product, found := e.ProductsMap[id]; found {
+			foundProducts = append(foundProducts, product)
+		}
+	}
+
+	return foundProducts, nil
 }
 
 func (c *Content) detectType(filename string) string {

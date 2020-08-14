@@ -14,6 +14,7 @@ var History = `
   }
   if (typeof (Storage) !== "undefined") {
     let viewed = localStorage.getItem("{{keyHistory}}")
+	viewed = JSON.parse(viewed)
     if (viewed != null && viewed.length != 0) {
       fetch("/api/products",
         {
@@ -22,7 +23,7 @@ var History = `
             "Content-Type": "application/json"
           },
           method: "POST",
-          body: viewed
+          body: JSON.stringify(viewed)
         }).then(function (res) {
           if (res.status == 200) {
             res.text().then(function (text) {
@@ -39,7 +40,6 @@ var History = `
                 dict[products[i].getAttribute("data-product-id")] = true
               }
               let updateViewed = new Array()
-              viewed = JSON.parse(viewed)
               for (let i = 0, max = viewed.length; i < max; i++) {
                 if (dict[viewed[i]]) {
                   updateViewed.push(viewed[i])
