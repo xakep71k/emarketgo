@@ -126,33 +126,81 @@ var OrderedProducts = `
 	</ul>
 </div>
 <div id="formWrapper" class="commonMargin">
-    <form id="orderForm" action="/api/order" accept-charset="UTF-8" method="post">
-        <label>Ваше имя</label>
-        <input type="text" name="customer_name" />
-
-        <label>Ваш телефон</label>
-        <input type="text" name="phone_number" />
-
-        <label>Ваш Email</label>
-        <input type="text" name="email" />
-
-        <label>Как с Вами связаться?</label>
-        <select name="contact_type">
-            <option selected="selected" value="telephone">по телефону</option>
-            <option value="viber">через Viber</option>
-            <option value="whatsapp">через WhatsApp</option>
-            <option value="email">по Email</option>
-            <option value="telegram">через Telegram</option>
-        </select>
-        <label for="agreement">
-            <input type="checkbox" name="agreement" id="agreement" autocomplete="off" />
-            Я соглашаюсь на обработку персональных данных
-        </label>
+	<form id="orderForm" action="/api/order" accept-charset="UTF-8" method="post" class="was-validated">
+		<div class="form-group">
+			<label class="form-control-label" for="customer_name">Ваше имя</label>
+			<input type="text" class="form-control" id="customer_name" name="customer_name" required/>
+			<div class="invalid-feedback">имя не заполнено</div>
+		</div>
+		<div class="form-group">
+			<label class="form-control-label" for="phone_number">Ваш телефон</label>
+			<input type="tel" class="form-control" id="phone_number" name="phone_number" required/>
+			<div class="invalid-feedback">телефон не заполнен</div>
+		</div>
+		<div class="form-group">
+			<label class="form-control-label" for="email">Ваш Email</label>
+			<input type="email" class="form-control" id="email" name="email" required/>
+			<div class="invalid-feedback">Email не заполнен</div>
+		</div>
+		<div class="form-group">
+			<label>Как с Вами связаться?</label>
+			<select id="contact_type" name="contact_type" class="custom-select" required>
+				<option value="">Выберите способ связи</option>
+				<option value="telephone">по телефону</option>
+				<option value="viber">через Viber</option>
+				<option value="whatsapp">через WhatsApp</option>
+				<option value="email">по Email</option>
+				<option value="telegram">через Telegram</option>
+			</select>
+			<div class="invalid-feedback">способ связи не выбран</div>
+		</div>
+		<div class="custom-control custom-checkbox mb-3">
+			<input type="checkbox" class="custom-control-input" id="agreement" name="agreement" autocomplete="off" required/>
+			<label class="custom-control-label" for="agreement">Я соглашаюсь на обработку персональных данных</label>
+			<div class="invalid-feedback">не дано согласие</div>
+		</div>
         <div class="text-center">
-            <input type="submit" name="commit" value="Отправить заказ" class="btn form-control btn-success"
-                data-disable-with="Отправить заказ" />
+            <button id="sendOrder" name="sendOrder" type="submit" class="btn form-control">Отправить заказ</button>
         </div>
     </form>
 </div>
+<div id="confirmOrder" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+				<div class="text-center">
+					<p>Отправить заказ?</p>
+				</div>
+            </div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn btn-primary" id="orderYes">да</button>
+				<button type="button" data-dismiss="modal" class="btn" id="orderNo">нет</button>
+			</div>
+        </div>
+    </div>
+</div>
+<script>
+function confirmOrder(e) {
+	var form = $("#orderForm")
+	e.preventDefault()
+	e.stopPropagation()
+	if(form[0].checkValidity() === false) {
+		return
+	}
+	$('#confirmOrder').modal({
+		backdrop: 'static',
+		keyboard: false
+	}).on('click', '#orderYes', function(e) {
+		form.trigger('submit')
+	})
+	$("#cancel").on('click',function(e){
+		e.preventDefault()
+		e.stopPropagation()
+		$('#confirmOrder').modal.model('hide')
+	})
+}
+
+$("#sendOrder").click("on", confirmOrder)
+</script>
 {{end}}
 `
