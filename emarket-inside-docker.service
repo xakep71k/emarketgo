@@ -5,9 +5,9 @@ Requires=docker.service
 After=docker.service
 
 [Service]
-WorkingDirectory=/home/pi/emarketror
-ExecStart=docker run --rm --name emarket -p 8080:8080 emarket
-ExecStop=docker stop emarket
+WorkingDirectory=/home/pi/emarketgo
+ExecStart=/usr/bin/docker run --rm --name emarket -p 8080:8080 emarket
+ExecStop=/usr/bin/docker stop emarket
 TimeoutStartSec=0
 Restart=on-failure
 StartLimitIntervalSec=60
