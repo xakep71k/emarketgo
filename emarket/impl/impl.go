@@ -298,7 +298,9 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 		e.handleSpecifiedFile(r.URL.Path, w, r)
 	}
 	router.HandleFunc("/bootstrap/", handleFile)
-	router.HandleFunc("/fontawesome/", handleFile)
+	/*
+		router.HandleFunc("/fontawesome/", handleFile)
+	*/
 	router.HandleFunc("/static/", handleFile)
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {

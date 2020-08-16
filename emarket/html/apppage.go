@@ -20,10 +20,12 @@ const appPage = `<!DOCTYPE html>
 
 <head>
     <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<!--
     <link href="/fontawesome/css/all.min.css" rel="stylesheet">
+-->
     <link href="/static/css/custom_bootstrap.css" rel="stylesheet">
     <link href="/static/css/app.css" rel="stylesheet">
-    <script src="/bootstrap/js/jquery-3.5.1.min.js"></script>
+    <script src="/bootstrap/js/jquery-3.5.1.slim.min.js"></script>
     <script src="/bootstrap/js/popper.min.js"></script>
     <script src="/bootstrap/js/bootstrap.min.js"></script>
     <meta charset="utf-8">

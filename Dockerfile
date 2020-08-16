@@ -1,6 +1,7 @@
-FROM golang:latest
-WORKDIR /build
-COPY emarket .
-RUN go install -v ./...
+FROM ubuntu:latest
+COPY data.txt /data/products.txt
+COPY web_root /www
+WORKDIR /sandbox
+COPY emarket/emarket .
 EXPOSE 8080
-CMD ["emarket", "--web-root=/home/alek/emarketgo/web_root"]
+CMD ["/sandbox/emarket", "--web-root=/www", "--listen", ":8080", "--data", "/data/products.txt"]
