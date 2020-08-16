@@ -36,6 +36,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	dataFile, err := filepath.Abs(*dataOpt)
 	webRoot, err := filepath.Abs(*webRootOpt)
 
 	if err != nil {
@@ -44,7 +45,7 @@ func main() {
 		return
 	}
 
-	products, err := impl.LoadProducts(*dataOpt)
+	products, err := impl.LoadProducts(dataFile)
 
 	if err != nil {
 		fmt.Println(err)
