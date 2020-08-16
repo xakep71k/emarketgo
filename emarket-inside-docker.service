@@ -1,0 +1,17 @@
+# sudo systemctl enable /home/pi/emarketror/rootfs/etc/systemd/system/emarket-inside-docker.service
+[Unit]
+Description=Docker Compose Application Service
+Requires=docker.service
+After=docker.service
+
+[Service]
+WorkingDirectory=/home/pi/emarketror
+ExecStart=docker run --rm --name emarket -p 8080:8080 emarket
+ExecStop=docker stop emarket
+TimeoutStartSec=0
+Restart=on-failure
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Install]
+WantedBy=multi-user.target
