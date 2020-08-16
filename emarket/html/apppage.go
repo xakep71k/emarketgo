@@ -70,6 +70,7 @@ const appPage = `<!DOCTYPE html>
 			}
 		}
     </script>
+	<!--
     <nav class="navbar navbar-expand-lg">
         <a class="navbar-brand" href="/"><i class="fas fa-child"></i></a>
         <button class="navbar-toggler navbar-toggler-right collapsed" type="button" data-toggle="collapse"
@@ -111,6 +112,7 @@ const appPage = `<!DOCTYPE html>
             </ul>
         </div>
     </nav>
+	-->
     {{.Body}}
 </body>
 <script>

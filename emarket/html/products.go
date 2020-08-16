@@ -45,6 +45,7 @@ var ProductList = PutInCartFunc + `
                     <img class="card-img-top" alt="{{.Title}}" src="/product/image/{{.ID}}" />
                 </a>
             </div>
+			<!--
             <div class="card-body align-bottom">
                 {{if ne .Quantity 0}}
                 <i class="fas fa-ruble-sign"></i>
@@ -54,6 +55,7 @@ var ProductList = PutInCartFunc + `
                 {{end}}
                 <i onclick="putInCart(this)" class="fas fa-shopping-cart product-cart" data-name="product-cart" data-product-id="{{.ID}}"></i>
             </div>
+			-->
         </div>
         {{end}}
     </div>
@@ -73,21 +75,23 @@ var Product = PutInCartFunc + `
         <div class="row show-info">
                 <div class="col-md-auto showCardLeft">
                         <div class="card">
-			<img class="img-fluid view overlay" alt="{{.Title}}" itemprop="image" src="/product/image/{{.ID}}" />
-                        <div class="card-body">
-                            <p>
-                                <b>
-				{{if ne .Quantity 0}}
-                                    Цена:
-                                    <span>{{.Price}}</span>
-                                    <span>рублей</span>
-				{{else}}
-                                    под заказ
-				{{end}}
-                                </b>
-                                <i onclick="putInCart(this)" class="fas fa-shopping-cart product-cart" data-name="product-cart" data-product-id="{{.ID}}"></i>
-                            </p>
-                        </div>
+							<img class="img-fluid view overlay" alt="{{.Title}}" itemprop="image" src="/product/image/{{.ID}}" />
+							<!--
+							<div class="card-body">
+								<p>
+									<b>
+					{{if ne .Quantity 0}}
+										Цена:
+										<span>{{.Price}}</span>
+										<span>рублей</span>
+					{{else}}
+										под заказ
+					{{end}}
+									</b>
+									<i onclick="putInCart(this)" class="fas fa-shopping-cart product-cart" data-name="product-cart" data-product-id="{{.ID}}"></i>
+								</p>
+							</div>
+							-->
                         </div>
                 </div>
                 <div class="col-lg"><p class="pre infoColor" itemprop="description">{{.Description}}</p></div>
