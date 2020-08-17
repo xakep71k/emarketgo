@@ -39,7 +39,7 @@ var ProductList = PutInCartFunc + `
 <div class="main-container" onload="">
     <div class="productsContainer" id="products">
         {{range .}}
-        <div class="card productCard">
+        <div class="card productCard" card-product-id="{{.ID}}">
             <div class="productThumb">
                 <a href="/zhurnaly/{{.ID}}">
                     <img class="card-img-top" alt="{{.Title}}" src="/product/image/{{.ID}}" />

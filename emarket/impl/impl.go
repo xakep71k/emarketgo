@@ -307,10 +307,10 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 			WriteResponse(w, r.URL.Path, e.Pages["home"])
 		}
 	})
+	router.HandleFunc("/istoriya_prosmotrov", func(w http.ResponseWriter, r *http.Request) {
+		WriteResponse(w, r.URL.Path, e.Pages["history"])
+	})
 	/*
-		router.HandleFunc("/istoriya_prosmotrov", func(w http.ResponseWriter, r *http.Request) {
-			WriteResponse(w, r.URL.Path, e.Pages["history"])
-		})
 		router.HandleFunc("/dostavka", func(w http.ResponseWriter, r *http.Request) {
 			WriteResponse(w, r.URL.Path, e.Pages["delivery"])
 		})

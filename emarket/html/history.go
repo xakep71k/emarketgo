@@ -28,7 +28,7 @@ var History = `
           if (res.status == 200) {
             res.text().then(function (text) {
               getHistoryPage().innerHTML = text
-              let products = document.querySelectorAll("[data-product-id]");
+              let products = document.querySelectorAll("[card-product-id]");
               if (products.length == 0) {
                 setNoContent()
               } else {
@@ -37,7 +37,7 @@ var History = `
               }
               let dict = {}
               for (let i = 0, max = products.length; i < max; i++) {
-                dict[products[i].getAttribute("data-product-id")] = true
+                dict[products[i].getAttribute("card-product-id")] = true
               }
               let updateViewed = new Array()
               for (let i = 0, max = viewed.length; i < max; i++) {
@@ -53,7 +53,9 @@ var History = `
         }).catch(function (res) {
           setNoContent()
         });
-    }
+    } else {
+	  setNoContent()
+	}
   }
 </script>
 ` + PutInCartFunc

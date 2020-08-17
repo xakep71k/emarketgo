@@ -70,7 +70,6 @@ const appPage = `<!DOCTYPE html>
 			}
 		}
     </script>
-	<!--
     <nav class="navbar navbar-expand-lg">
         <a class="navbar-brand" href="/"><i class="fas fa-child"></i></a>
         <button class="navbar-toggler navbar-toggler-right collapsed" type="button" data-toggle="collapse"
@@ -93,6 +92,7 @@ const appPage = `<!DOCTYPE html>
 		        <i class="fas fa-eye"></i> Вы смотрели
 		    </a>
 		</li>
+	<!--
 		<li class="nav-item">
             <span name="cart-counter" class="counter" style="display: none;"></span>
 		    <a class="nav-link {{if eq .CurrentPage 5}} active {{end}}" href="/zakazy/novyy">
@@ -109,10 +109,10 @@ const appPage = `<!DOCTYPE html>
                         <i class="fas fa-id-card"></i> Свяжитесь с нами
                     </a>
                 </li>
+	-->
             </ul>
         </div>
     </nav>
-	-->
     {{.Body}}
 </body>
 <script>
