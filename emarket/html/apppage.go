@@ -19,10 +19,10 @@ const appPage = `<!DOCTYPE html>
 <html lang="ru">
 
 <head>
-    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/fontawesome/css/all.min.css" rel="stylesheet">
-    <link href="/static/css/custom_bootstrap.css" rel="stylesheet">
-    <link href="/static/css/app.css" rel="stylesheet">
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="all">
+    <link href="/fontawesome/css/all.min.css" rel="stylesheet" media="all">
+    <link href="/static/css/custom_bootstrap.css" rel="stylesheet" media="all">
+    <link href="/static/css/app.css" rel="stylesheet" media="all">
     <script src="/bootstrap/js/jquery-3.5.1.slim.min.js"></script>
     <script src="/bootstrap/js/popper.min.js"></script>
     <script src="/bootstrap/js/bootstrap.min.js"></script>
