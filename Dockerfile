@@ -12,7 +12,7 @@ RUN mkdir -p /emarket
 ADD emarket /emarket
 WORKDIR /emarket
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./bin/emarket
+RUN CGO_ENABLED=0 go build -o ./bin/emarket
 
 FROM scratch
 
