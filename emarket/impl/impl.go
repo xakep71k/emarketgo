@@ -367,6 +367,7 @@ func (e *EMarket) staticHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Cache-Control", "max-age=3600")
 	w.Header().Set("Content-Type", ctype)
 	WriteResponse(w, r.URL.Path, content)
 }
