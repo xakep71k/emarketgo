@@ -36,7 +36,7 @@ type ProductPageList struct {
 func (p *Page) htmlData() []byte {
 	buf := bytes.NewBuffer(make([]byte, 0))
 	html.AppPage.Execute(buf, p)
-	return buf.Bytes()
+	return doMinify(buf.Bytes(), "text/html")
 }
 
 func NewHomePage(body string) *Page {

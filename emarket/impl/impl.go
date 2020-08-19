@@ -74,16 +74,18 @@ func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
 	}
 
 	var err error
-	e.FileCache["/static/css/all.css"], err = concatFiles(rootDir, html.CSS)
+	allCSS, err := concatFiles(rootDir, html.CSS)
 	if err != nil {
 		return nil, err
 	}
 
-	e.FileCache["/static/js/all.js"], err = concatFiles(rootDir, html.JS)
+	allJS, err := concatFiles(rootDir, html.JS)
 	if err != nil {
 		return nil, err
 	}
 
+	e.FileCache["/static/css/all.css"] = doMinify(allCSS, "text/css")
+	e.FileCache["/static/js/all.js"] = doMinify(allJS, "application/javascript")
 	e.setupRouter(products, productPagesHtml)
 	return e, nil
 }

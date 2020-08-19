@@ -9,7 +9,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"syscall"
+
+	"github.com/tdewolff/minify"
+	"github.com/tdewolff/minify/css"
+	mhtml "github.com/tdewolff/minify/html"
+	"github.com/tdewolff/minify/js"
 )
 
 func LoadProducts(dataPath string) (products []*Product, err error) {
@@ -119,4 +125,17 @@ func readFile(filename string) ([]byte, error) {
 		fmt.Printf("cannot read file %s %v\n", filename, err)
 	}
 	return body, err
+}
+
+func doMinify(body []byte, mtype string) []byte {
+	m := minify.New()
+	m.AddFunc("text/css", css.Minify)
+	m.AddFunc("text/html", mhtml.Minify)
+	m.AddFuncRegexp(regexp.MustCompile("^(application|text)/(x-)?(java|ecma)script$"), js.Minify)
+	b, err := m.Bytes(mtype, body)
+	if err != nil {
+		panic("minify " + err.Error())
+	}
+
+	return b
 }

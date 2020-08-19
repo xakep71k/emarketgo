@@ -7,15 +7,15 @@ var History = `
 </div>
 <script>
   function getHistoryPage() {
-    return $("#historyPage")[0]
+    return $("#historyPage")[0];
   }
   function setNoContent() {
-    getHistoryPage().innerHTML = '<div class="text-center">здесь ничего нет</div>'
+    getHistoryPage().innerHTML = '<div class="text-center">здесь ничего нет</div>';
   }
   $(function() {
 	  if (typeof (Storage) !== "undefined") {
-		let viewed = localStorage.getItem("{{keyHistory}}")
-		viewed = JSON.parse(viewed)
+		let viewed = localStorage.getItem("{{keyHistory}}");
+		viewed = JSON.parse(viewed);
 		if (viewed != null && viewed.length != 0) {
 		  fetch("/api/products",
 			{
@@ -28,34 +28,34 @@ var History = `
 			}).then(function (res) {
 			  if (res.status == 200) {
 				res.text().then(function (text) {
-				  getHistoryPage().innerHTML = text
+				  getHistoryPage().innerHTML = text;
 				  let products = document.querySelectorAll("[card-product-id]");
 				  if (products.length == 0) {
-					setNoContent()
+					setNoContent();
 				  } else {
-					getHistoryPage().classList.remove("at-center")
-					setProductsInCart()
+					getHistoryPage().classList.remove("at-center");
+					setProductsInCart();
 				  }
-				  let dict = {}
+				  let dict = {};
 				  for (let i = 0, max = products.length; i < max; i++) {
-					dict[products[i].getAttribute("card-product-id")] = true
+					dict[products[i].getAttribute("card-product-id")] = true;
 				  }
-				  let updateViewed = new Array()
+				  let updateViewed = new Array();
 				  for (let i = 0, max = viewed.length; i < max; i++) {
 					if (dict[viewed[i]]) {
-					  updateViewed.push(viewed[i])
+					  updateViewed.push(viewed[i]);
 					}
 				  }
-				  localStorage.setItem("{{keyHistory}}", JSON.stringify(updateViewed))
+				  localStorage.setItem("{{keyHistory}}", JSON.stringify(updateViewed));
 				})
 			  } else {
-				setNoContent()
+				setNoContent();
 			  }
 			}).catch(function (res) {
-			  setNoContent()
+			  setNoContent();
 			});
 		} else {
-		  setNoContent()
+		  setNoContent();
 		}
 	  }
   });

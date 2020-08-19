@@ -38,32 +38,32 @@ function setProductsInCart() {
 
 function putInCart(cart) {
     if (typeof (Storage) !== "undefined") {
-        let inCart = localStorage.getItem("{{keyCart}}")
+        let inCart = localStorage.getItem("{{keyCart}}");
         if (inCart == null) {
-            inCart = {}
+            inCart = {};
         } else {
-            inCart = JSON.parse(inCart)
+            inCart = JSON.parse(inCart);
         }
 
-        const pid = cart.getAttribute("data-product-id")
+        const pid = cart.getAttribute("data-product-id");
 
-        cart.classList.remove("fa-shopping-cart")
-        cart.classList.remove("fa-cart-plus")
-        $("#alertCart").remove()
+        cart.classList.remove("fa-shopping-cart");
+        cart.classList.remove("fa-cart-plus");
+        $("#alertCart").remove();
         if (inCart[pid]) {
-            delete inCart[pid]
-            cart.classList.add("fa-shopping-cart")
-            $('{{alertCartRemove}}').appendTo("body")
+            delete inCart[pid];
+            cart.classList.add("fa-shopping-cart");
+            $('{{alertCartRemove}}').appendTo("body");
         } else {
-            inCart[pid] = true
-            cart.classList.add("fa-cart-plus")
-            $('{{alertCartPutIn}}').appendTo("body")
-            $("#alertPutInCartCounter").html(Object.keys(inCart).length)
+            inCart[pid] = true;
+            cart.classList.add("fa-cart-plus");
+            $('{{alertCartPutIn}}').appendTo("body");
+            $("#alertPutInCartCounter").html(Object.keys(inCart).length);
         }
 
-        localStorage.setItem("{{keyCart}}", JSON.stringify(inCart))
-        setCartCounter()
-        $("#alertCart").slideDown("slow").delay(4000).fadeOut("slow")
+        localStorage.setItem("{{keyCart}}", JSON.stringify(inCart));
+        setCartCounter();
+        $("#alertCart").slideDown("slow").delay(4000).fadeOut("slow");
     }
 }
 

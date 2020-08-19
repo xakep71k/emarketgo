@@ -26,7 +26,7 @@ const appPage = `<!DOCTYPE html>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css" integrity="sha512-1PKOgIY59xJ8Co8+NE6FZ+LOAZKjy+KY8iq0G4B3CyeY6wYHN3yt9PW0XpSriVlkMXe40PTKnXrLnZ9+fkDaog==" crossorigin="anonymous" />
     <link href="/static/css/all.css" rel="stylesheet" media="all">
-    <script src="/static/js/all.js"></script>
+    <script src="/static/js/all.js" async></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>{{.Title}}</title>
 </head>
@@ -46,29 +46,29 @@ const appPage = `<!DOCTYPE html>
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item">
                     <a class="nav-link {{if eq .CurrentPage 1}} active {{end}}>" href="/">
-                        <i class="fas fa-home"></i> Главная
+                        <i class="fas fa-home"></i>&nbsp;Главная
                     </a>
                 </li>
 		<li class="nav-item">
 		    <a class="nav-link {{if eq .CurrentPage 4}} active {{end}}" href="/istoriya_prosmotrov">
-		        <i class="fas fa-eye"></i> Вы смотрели
+		        <i class="fas fa-eye"></i>&nbsp;Вы смотрели
 		    </a>
 		</li>
 	<!--
 		<li class="nav-item">
             <span name="cart-counter" class="counter" style="display: none;"></span>
 		    <a class="nav-link {{if eq .CurrentPage 5}} active {{end}}" href="/zakazy/novyy">
-		        <i class="fas fa-shopping-cart"></i> Корзина
+		        <i class="fas fa-shopping-cart"></i>&nbsp;Корзина
 		    </a>
 		</li>
                 <li class="nav-item">
                     <a class="nav-link {{if eq .CurrentPage 2}} active {{end}}" href="/dostavka">
-                        <i class="fas fa-shipping-fast"></i> Доставка
+                        <i class="fas fa-shipping-fast"></i>&nbsp;Доставка
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {{if eq .CurrentPage 3}} active {{end}}" href="/kontakty">
-                        <i class="fas fa-id-card"></i> Свяжитесь с нами
+                        <i class="fas fa-id-card"></i>&nbsp;Свяжитесь с нами
                     </a>
                 </li>
 	-->
