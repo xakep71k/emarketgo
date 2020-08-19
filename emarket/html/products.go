@@ -68,29 +68,29 @@ var Product = `
 </div>
 <script>
     if (typeof (Storage) !== "undefined") {
-        let viewed = localStorage.getItem("{{keyHistory}}")
+        let viewed = localStorage.getItem("{{keyHistory}}");
         if (viewed == null) {
-            viewed = new Array()
+            viewed = new Array();
         } else {
-            viewed = JSON.parse(viewed)
+            viewed = JSON.parse(viewed);
         }
-        const pid = "{{.ID}}"
-        let index = 0
+        const pid = "{{.ID}}";
+        let index = 0;
         do {
-            index = viewed.indexOf(pid)
+            index = viewed.indexOf(pid);
             if (index > -1) {
-                viewed.splice(index, 1)
+                viewed.splice(index, 1);
             } else {
-                break
+                break;
             }
-        } while(true)
-        viewed.unshift(pid)
+        } while(true);
+        viewed.unshift(pid);
 
-        const limit = 30
+        const limit = 30;
         if (viewed.length > limit) {
-            viewed.splice(limit, viewed.length - limit)
+            viewed.splice(limit, viewed.length - limit);
         }
-        localStorage.setItem("{{keyHistory}}", JSON.stringify(viewed))
+        localStorage.setItem("{{keyHistory}}", JSON.stringify(viewed));
     }
 </script>
 `
