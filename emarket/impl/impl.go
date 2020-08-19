@@ -330,6 +330,10 @@ func (e *EMarket) searchFile(file string) string {
 	return ""
 }
 
+func setCacheControl(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", "max-age=3600")
+}
+
 func (e *EMarket) staticHandler(w http.ResponseWriter, r *http.Request) {
 	log := func(err error) {
 		fmt.Printf("%v %v", r.URL.Path, err)
@@ -367,7 +371,7 @@ func (e *EMarket) staticHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Cache-Control", "max-age=3600")
+	setCacheControl(w)
 	w.Header().Set("Content-Type", ctype)
 	WriteResponse(w, r.URL.Path, content)
 }
@@ -404,6 +408,7 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 		func(url string, product *Product) {
 			htmlData := product.Thumb
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
+				setCacheControl(w)
 				WriteResponse(w, r.URL.Path, htmlData)
 			})
 		}(magazineImageURL, product)
