@@ -1,10 +1,8 @@
 package impl
 
 import (
-	"bytes"
 	"emarket/html"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,19 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"syscall"
 )
-
-const (
-	PageNo = iota
-	PageHome
-	PageDelivery
-	PageContact
-	PageHistory
-	PageNewOrder
-)
-
-const pageSize = 30
 
 type Product struct {
 	ID          string `bson:"_id,omitempty" json:"id"`
@@ -46,168 +32,7 @@ type Cart struct {
 	TotalPrice int
 }
 
-type Page struct {
-	ID          string
-	Title       string
-	Body        string
-	CurrentPage int
-	PageTitle   string
-}
-
-type ProductPageList struct {
-	First       bool
-	Last        bool
-	PageNum     int
-	Products    []*Product
-	PageNumbers []int
-	MaxPages    int
-	ListHTML    string
-	Title       string
-}
-
-func (p *Page) HTMLData() []byte {
-	buf := bytes.NewBuffer(make([]byte, 0))
-	html.AppPage.Execute(buf, p)
-	return buf.Bytes()
-}
-
 const ProductsTitle = "Журналы и выкройки для шитья"
-
-func NewProductPageList(index int, maxPages int, products []*Product, listHtml string) *ProductPageList {
-	p := &ProductPageList{
-		PageNum:  index + 1,
-		First:    index == 0,
-		Last:     maxPages == 0 || maxPages == index+1,
-		Products: products,
-		MaxPages: maxPages,
-		ListHTML: listHtml,
-		Title:    ProductsTitle,
-	}
-
-	min := func(x, y int) int {
-		if x > y {
-			return y
-		}
-		return x
-	}
-
-	pageNumbers := []int{index}
-	prepend := true
-	iPre := index - 1
-	iApp := index + 1
-	for len(pageNumbers) < min(maxPages, 5) {
-		if prepend && iPre >= 0 {
-			pageNumbers = append([]int{iPre}, pageNumbers...)
-			iPre--
-		} else if iApp < maxPages {
-			pageNumbers = append(pageNumbers, iApp)
-			iApp++
-		}
-		prepend = !prepend
-	}
-
-	p.PageNumbers = pageNumbers
-	return p
-}
-
-func NewHomePage(body string) *Page {
-	p := &Page{
-		ID:          "magazines-index",
-		Title:       ProductsTitle,
-		CurrentPage: PageHome,
-		Body:        body,
-	}
-
-	return p
-}
-
-func NewDeliveryPage() *Page {
-	p := &Page{
-		ID:          "service-delivery_terms",
-		Title:       "Условия доставки",
-		CurrentPage: PageDelivery,
-	}
-
-	p.Body = html.Generate("delivery page", html.Delivery, p).String()
-	return p
-}
-
-func NewContactPage() *Page {
-	p := &Page{
-		Title:       "Контакты",
-		CurrentPage: PageContact,
-	}
-
-	p.Body = html.Generate("contact page", html.Contact, p).String()
-	return p
-}
-
-func NewHistoryPage() *Page {
-	p := &Page{
-		ID:          "service-history",
-		Title:       "История просмотров",
-		CurrentPage: PageHistory,
-	}
-
-	p.Body = html.Generate("history page", html.History, p).String()
-	return p
-}
-
-func NewNotFoundPage() *Page {
-	return &Page{
-		Title: "Страница не найдена",
-		Body:  html.NotFound,
-	}
-}
-
-func NewProductsPage(body string) *Page {
-	return &Page{
-		ID:          "magazines-index",
-		Title:       "Журналы и выкройки для шитья",
-		CurrentPage: PageHome,
-		Body:        body,
-	}
-}
-
-func NewProductPage(body, title string) *Page {
-	return &Page{
-		ID:          "magazines-show",
-		Title:       title,
-		CurrentPage: PageNo,
-		Body:        body,
-	}
-}
-
-func NewOrderPage() *Page {
-	p := &Page{
-		ID:          "orders-new",
-		Title:       "Корзина",
-		CurrentPage: PageNewOrder,
-	}
-
-	p.Body = html.Generate("cart page", html.NewOrder, p).String()
-	return p
-}
-
-type Content struct {
-	mytype map[string]string
-}
-
-func NewContent() *Content {
-	c := &Content{}
-	c.mytype = map[string]string{
-		".js":     "application/javascript",
-		".css":    "text/css",
-		".ico":    "image/x-icon",
-		".gif":    "image/gif",
-		"js.map":  "application/octet-stream",
-		"css.map": "application/octet-stream",
-		".woff":   "font/woff",
-		".woff2":  "font/woff2",
-		".ttf":    "font/ttf",
-	}
-	return c
-}
 
 type EMarket struct {
 	rootDir     string
@@ -218,62 +43,6 @@ type EMarket struct {
 	CSS         []byte
 	JS          []byte
 	FileCache   map[string][]byte
-}
-
-func buildHtmlProductPages(productPages [][]*Product) []string {
-	pages := make([]string, 0)
-	maxPages := len(productPages)
-
-	if maxPages == 0 {
-		panic("there are no any products")
-	}
-
-	for index, products := range productPages {
-		plist := html.Generate("product list", html.ProductList, products).String()
-		pagination := html.Generate(
-			"pagination",
-			html.Pagination,
-			NewProductPageList(index, maxPages, products, plist),
-		).String()
-		pages = append(pages, pagination)
-	}
-	return pages
-}
-
-func collectProductsPages(products []*Product) (productPages [][]*Product) {
-	iPage := -1
-	for i, p := range products {
-		if (i % pageSize) == 0 {
-			iPage++
-			productPages = append(productPages, make([]*Product, 0))
-		}
-
-		productPages[iPage] = append(productPages[iPage], p)
-	}
-
-	return
-}
-
-func setPageNum(productPages [][]*Product) {
-	for index, products := range productPages {
-		for _, p := range products {
-			p.PageNum = index + 1
-		}
-	}
-}
-
-func concatFiles(rootDir string, files []string) ([]byte, error) {
-	buf := &bytes.Buffer{}
-	for _, file := range files {
-		data, err := ioutil.ReadFile(rootDir + "/" + file)
-		if err != nil {
-			return nil, err
-		}
-		buf.Write(data)
-		buf.Write([]byte("\n"))
-	}
-
-	return buf.Bytes(), nil
 }
 
 func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
@@ -296,12 +65,12 @@ func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
 	setPageNum(productPages)
 	productPagesHtml := buildHtmlProductPages(productPages)
 	e.Pages = map[string][]byte{
-		"contact":  NewContactPage().HTMLData(),
-		"delivery": NewDeliveryPage().HTMLData(),
-		"notfound": NewNotFoundPage().HTMLData(),
-		"home":     NewHomePage(productPagesHtml[0]).HTMLData(),
-		"history":  NewHistoryPage().HTMLData(),
-		"neworder": NewOrderPage().HTMLData(),
+		"contact":  NewContactPage().htmlData(),
+		"delivery": NewDeliveryPage().htmlData(),
+		"notfound": NewNotFoundPage().htmlData(),
+		"home":     NewHomePage(productPagesHtml[0]).htmlData(),
+		"history":  NewHistoryPage().htmlData(),
+		"neworder": NewOrderPage().htmlData(),
 	}
 
 	var err error
@@ -328,10 +97,6 @@ func (e *EMarket) searchFile(file string) string {
 	}
 
 	return ""
-}
-
-func setCacheControl(w http.ResponseWriter) {
-	w.Header().Set("Cache-Control", "max-age=31536000")
 }
 
 func (e *EMarket) staticHandler(w http.ResponseWriter, r *http.Request) {
@@ -373,7 +138,7 @@ func (e *EMarket) staticHandler(w http.ResponseWriter, r *http.Request) {
 
 	setCacheControl(w)
 	w.Header().Set("Content-Type", ctype)
-	WriteResponse(w, r.URL.Path, content)
+	writeResponse(w, r.URL.Path, content)
 }
 
 func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
@@ -384,21 +149,21 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 		if r.URL.Path != "/" {
 			e.notFound(w, r)
 		} else {
-			WriteResponse(w, r.URL.Path, e.Pages["home"])
+			writeResponse(w, r.URL.Path, e.Pages["home"])
 		}
 	})
 	router.HandleFunc("/istoriya_prosmotrov", func(w http.ResponseWriter, r *http.Request) {
-		WriteResponse(w, r.URL.Path, e.Pages["history"])
+		writeResponse(w, r.URL.Path, e.Pages["history"])
 	})
 	/*
 		router.HandleFunc("/dostavka", func(w http.ResponseWriter, r *http.Request) {
-			WriteResponse(w, r.URL.Path, e.Pages["delivery"])
+			writeResponse(w, r.URL.Path, e.Pages["delivery"])
 		})
 		router.HandleFunc("/kontakty", func(w http.ResponseWriter, r *http.Request) {
-			WriteResponse(w, r.URL.Path, e.Pages["contact"])
+			writeResponse(w, r.URL.Path, e.Pages["contact"])
 		})
 		router.HandleFunc("/zakazy/novyy", func(w http.ResponseWriter, r *http.Request) {
-			WriteResponse(w, r.URL.Path, e.Pages["neworder"])
+			writeResponse(w, r.URL.Path, e.Pages["neworder"])
 		})
 	*/
 	for _, product := range products {
@@ -409,7 +174,7 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 			htmlData := product.Thumb
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 				setCacheControl(w)
-				WriteResponse(w, r.URL.Path, htmlData)
+				writeResponse(w, r.URL.Path, htmlData)
 			})
 		}(magazineImageURL, product)
 
@@ -422,9 +187,9 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 
 		func(url string, product *Product) {
 			body := html.Generate("show product", html.Product, product).String()
-			htmlData := NewProductPage(body, product.Title).HTMLData()
+			htmlData := NewProductPage(body, product.Title).htmlData()
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
-				WriteResponse(w, r.URL.Path, htmlData)
+				writeResponse(w, r.URL.Path, htmlData)
 			})
 		}(magazineURL, product)
 
@@ -440,9 +205,9 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 		func(index int, htmlData []byte) {
 			url := fmt.Sprintf("/zhurnaly/stranitsa/%v", i+1)
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
-				WriteResponse(w, r.URL.Path, htmlData)
+				writeResponse(w, r.URL.Path, htmlData)
 			})
-		}(i, NewProductsPage(body).HTMLData())
+		}(i, NewProductsPage(body).htmlData())
 	}
 
 	router.HandleFunc("/api/products", func(w http.ResponseWriter, r *http.Request) {
@@ -457,13 +222,13 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			WriteResponse(w, r.URL.Path, []byte(err.Error()))
+			writeResponse(w, r.URL.Path, []byte(err.Error()))
 			return
 		}
 
 		buf := html.Generate("product list", html.ProductList, foundProducts)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		WriteResponse(w, r.URL.Path, buf.Bytes())
+		writeResponse(w, r.URL.Path, buf.Bytes())
 	})
 
 	router.HandleFunc("/api/cart", func(w http.ResponseWriter, r *http.Request) {
@@ -478,7 +243,7 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			WriteResponse(w, r.URL.Path, []byte(err.Error()))
+			writeResponse(w, r.URL.Path, []byte(err.Error()))
 			return
 		}
 
@@ -494,9 +259,9 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 
 			buf := html.Generate("cart list", html.OrderedProducts, c)
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			WriteResponse(w, r.URL.Path, buf.Bytes())
+			writeResponse(w, r.URL.Path, buf.Bytes())
 		} else {
-			WriteResponse(w, r.URL.Path, []byte{})
+			writeResponse(w, r.URL.Path, []byte{})
 		}
 	})
 	e.router = router
@@ -518,29 +283,11 @@ func (e *EMarket) readProducts(r io.Reader) ([]*Product, error) {
 	return foundProducts, nil
 }
 
-func (c *Content) detectType(filename string) (string, error) {
-	for suffix, contentType := range c.mytype {
-		if strings.HasSuffix(filename, suffix) {
-			return contentType, nil
-		}
-	}
-
-	return "", fmt.Errorf("unknown type %v", filename)
-}
-
-func WriteResponse(w http.ResponseWriter, path string, data []byte) {
-	if _, err := w.Write(data); err != nil {
-		if !errors.Is(err, syscall.EPIPE) {
-			fmt.Printf("%v %v\n", path, err)
-		}
-	}
-}
-
 func (e *EMarket) notFound(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Printf("not found %v\n", r.URL.Path)
-	WriteResponse(w, r.URL.Path, e.Pages["notfound"])
+	writeResponse(w, r.URL.Path, e.Pages["notfound"])
 }
 
 func (e *EMarket) handleSpecifiedFile(filename string, w http.ResponseWriter, r *http.Request) {
@@ -549,7 +296,7 @@ func (e *EMarket) handleSpecifiedFile(filename string, w http.ResponseWriter, r 
 		ctype, err := e.content.detectType(r.URL.Path)
 		if err == nil {
 			w.Header().Set("Content-Type", ctype)
-			WriteResponse(w, r.URL.Path, body)
+			writeResponse(w, r.URL.Path, body)
 		} else {
 			fmt.Printf("%v %v\n", r.URL.Path, err)
 			e.notFound(w, r)
@@ -562,43 +309,4 @@ func (e *EMarket) handleSpecifiedFile(filename string, w http.ResponseWriter, r 
 
 func (e *EMarket) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	e.router.ServeHTTP(w, r)
-}
-
-func readFile(filename string) ([]byte, error) {
-	stat, err := os.Stat(filename)
-	if err != nil {
-		fmt.Printf("read file: %s %v\n", filename, err)
-		return nil, err
-	}
-
-	if !stat.Mode().IsRegular() {
-		fmt.Printf("not regular file: %s\n", filename)
-		return nil, errors.New("not a regulat file")
-	}
-
-	body, err := ioutil.ReadFile(filename)
-	if err != nil {
-		fmt.Printf("cannot read file %s %v\n", filename, err)
-	}
-	return body, err
-}
-
-func LoadProducts(dataPath string) (products []*Product, err error) {
-	data, err := ioutil.ReadFile(dataPath)
-
-	if err != nil {
-		return products, err
-	}
-
-	var tmpProducts []*Product
-	if err := json.Unmarshal(data, &tmpProducts); err != nil {
-		return products, err
-	}
-
-	for _, product := range tmpProducts {
-		if product.Enable {
-			products = append(products, product)
-		}
-	}
-	return products, nil
 }

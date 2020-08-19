@@ -16,6 +16,7 @@ func main() {
 		fmt.Printf("Usage: %s --web-root <path> --listen <ip:port> --data <path>\n", os.Args[0])
 		os.Exit(1)
 	}
+
 	webRootOpt := flag.String("web-root", "", "<path>")
 	listenOpt := flag.String("listen", "", "<ip:port>")
 	dataOpt := flag.String("data", "", "<path>")
