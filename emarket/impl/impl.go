@@ -218,8 +218,6 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 1024*2)
-		defer r.Body.Close()
-
 		foundProducts, err := e.readProducts(r.Body)
 
 		if err != nil {
@@ -239,8 +237,6 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 1024*2)
-		defer r.Body.Close()
-
 		foundProducts, err := e.readProducts(r.Body)
 
 		if err != nil {
