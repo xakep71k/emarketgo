@@ -331,7 +331,7 @@ func (e *EMarket) searchFile(file string) string {
 }
 
 func setCacheControl(w http.ResponseWriter) {
-	w.Header().Set("Cache-Control", "max-age=3600")
+	w.Header().Set("Cache-Control", "max-age=31536000")
 }
 
 func (e *EMarket) staticHandler(w http.ResponseWriter, r *http.Request) {
