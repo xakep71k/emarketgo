@@ -19,57 +19,14 @@ const appPage = `<!DOCTYPE html>
 <html lang="ru">
 
 <head>
-    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="all">
-    <link href="/fontawesome/css/all.min.css" rel="stylesheet" media="all">
-    <link href="/static/css/custom_bootstrap.css" rel="stylesheet" media="all">
-    <link href="/static/css/app.css" rel="stylesheet" media="all">
-    <script src="/bootstrap/js/jquery-3.5.1.slim.min.js"></script>
-    <script src="/bootstrap/js/popper.min.js"></script>
-    <script src="/bootstrap/js/bootstrap.min.js"></script>
+    <link href="/static/css/all.css" rel="stylesheet" media="all">
+    <script src="/static/js/all.js"></script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>{{.Title}}</title>
 </head>
 
 <body id="{{.ID}}">
-	<script>
-		function setCartCounter() {
-			if (typeof (Storage) !== "undefined") {
-				let counters = document.getElementsByName("cart-counter")
-				let inCart = localStorage.getItem("{{keyCart}}")
-				if (inCart != null) {
-					const counterVal = Object.keys(JSON.parse(inCart)).length
-					if (counterVal != 0) {
-						for(let i = 0; i < counters.length; i++) {
-							counters[i].style.display = ""
-							counters[i].innerHTML = counterVal
-						}
-						return
-					}
-				}
-				for(let i = 0; i < counters.length; i++) {
-					counters[i].style.display = "none"
-					counters[i].innerHTML = ""
-				}
-			}
-		}
-		function setProductsInCart() {
-			if (typeof (Storage) !== "undefined") {
-				let counters = document.getElementsByName("cart-counter")
-				let inCart = localStorage.getItem("{{keyCart}}")
-				if (inCart != null) {
-					inCart = JSON.parse(inCart)
-					for (let pid in inCart) {
-						let carts = document.querySelectorAll("[data-product-id='" + pid + "']");
-						for (let i = 0; i < carts.length; i++) {
-							carts[i].classList.remove("fa-shopping-cart")
-							carts[i].classList.add("fa-cart-plus")
-						}
-					}
-				}
-			}
-		}
-    </script>
     <nav class="navbar navbar-expand-lg">
         <a class="navbar-brand" href="/"><i class="fas fa-child"></i></a>
         <button class="navbar-toggler navbar-toggler-right collapsed" type="button" data-toggle="collapse"
@@ -116,8 +73,10 @@ const appPage = `<!DOCTYPE html>
     {{.Body}}
 </body>
 <script>
-	setCartCounter()
-	setProductsInCart()
+	$(function() {
+		setCartCounter();
+		setProductsInCart();
+	});
 </script>
 </html>
 `

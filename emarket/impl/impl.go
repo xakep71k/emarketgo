@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"syscall"
@@ -214,6 +215,9 @@ type EMarket struct {
 	router      *http.ServeMux
 	Pages       map[string][]byte
 	ProductsMap map[string]*Product
+	CSS         []byte
+	JS          []byte
+	FileCache   map[string][]byte
 }
 
 func buildHtmlProductPages(productPages [][]*Product) []string {
@@ -258,6 +262,20 @@ func setPageNum(productPages [][]*Product) {
 	}
 }
 
+func concatFiles(rootDir string, files []string) ([]byte, error) {
+	buf := &bytes.Buffer{}
+	for _, file := range files {
+		data, err := ioutil.ReadFile(rootDir + "/" + file)
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(data)
+		buf.Write([]byte("\n"))
+	}
+
+	return buf.Bytes(), nil
+}
+
 func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
 	sort.SliceStable(products, func(i, j int) bool {
 		return products[i].Title < products[j].Title
@@ -267,6 +285,7 @@ func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
 		rootDir:     rootDir,
 		content:     NewContent(),
 		ProductsMap: make(map[string]*Product, 0),
+		FileCache:   make(map[string][]byte),
 	}
 
 	for _, product := range products {
@@ -285,21 +304,77 @@ func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
 		"neworder": NewOrderPage().HTMLData(),
 	}
 
+	var err error
+	e.FileCache["/static/css/all.css"], err = concatFiles(rootDir, html.CSS)
+	if err != nil {
+		return nil, err
+	}
+
+	e.FileCache["/static/js/all.js"], err = concatFiles(rootDir, html.JS)
+	if err != nil {
+		return nil, err
+	}
+
 	e.setupRouter(products, productPagesHtml)
 	return e, nil
 }
 
+func (e *EMarket) searchFile(file string) string {
+	for _, path := range html.SearchPath {
+		full := e.rootDir + path + file
+		if _, err := os.Stat(full); err == nil {
+			return full
+		}
+	}
+
+	return ""
+}
+
+func (e *EMarket) staticHandler(w http.ResponseWriter, r *http.Request) {
+	log := func(err error) {
+		fmt.Printf("%v %v", r.URL.Path, err)
+	}
+
+	requestedFile, err := filepath.Abs(r.URL.Path)
+	if err != nil {
+		log(err)
+		e.notFound(w, r)
+		return
+	}
+
+	content := e.FileCache[requestedFile]
+	if content == nil {
+		fullPath := e.searchFile(strings.TrimPrefix(requestedFile, "/static/"))
+		if fullPath == "" {
+			e.notFound(w, r)
+			return
+		}
+
+		var err error
+		content, err = ioutil.ReadFile(fullPath)
+		if err != nil {
+			log(err)
+			e.notFound(w, r)
+			return
+		}
+		e.FileCache[requestedFile] = content
+	}
+
+	ctype, err := e.content.detectType(requestedFile)
+	if err != nil {
+		log(err)
+		e.notFound(w, r)
+		return
+	}
+
+	w.Header().Set("Content-Type", ctype)
+	WriteResponse(w, r.URL.Path, content)
+}
+
 func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 	router := http.NewServeMux()
-	router.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		e.handleSpecifiedFile("/static/favicon.ico", w, r)
-	})
-	handleFile := func(w http.ResponseWriter, r *http.Request) {
-		e.handleSpecifiedFile(r.URL.Path, w, r)
-	}
-	router.HandleFunc("/bootstrap/", handleFile)
-	router.HandleFunc("/fontawesome/", handleFile)
-	router.HandleFunc("/static/", handleFile)
+	router.HandleFunc("/favicon.ico", e.staticHandler)
+	router.HandleFunc("/static/", e.staticHandler)
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			e.notFound(w, r)
@@ -437,14 +512,14 @@ func (e *EMarket) readProducts(r io.Reader) ([]*Product, error) {
 	return foundProducts, nil
 }
 
-func (c *Content) detectType(filename string) string {
+func (c *Content) detectType(filename string) (string, error) {
 	for suffix, contentType := range c.mytype {
 		if strings.HasSuffix(filename, suffix) {
-			return contentType
+			return contentType, nil
 		}
 	}
 
-	panic(fmt.Sprintf("unknown type %v", filename))
+	return "", fmt.Errorf("unknown type %v", filename)
 }
 
 func WriteResponse(w http.ResponseWriter, path string, data []byte) {
@@ -465,9 +540,16 @@ func (e *EMarket) notFound(w http.ResponseWriter, r *http.Request) {
 func (e *EMarket) handleSpecifiedFile(filename string, w http.ResponseWriter, r *http.Request) {
 	body, err := readFile(e.rootDir + filename)
 	if err == nil {
-		w.Header().Set("Content-Type", e.content.detectType(r.URL.Path))
-		WriteResponse(w, r.URL.Path, body)
+		ctype, err := e.content.detectType(r.URL.Path)
+		if err == nil {
+			w.Header().Set("Content-Type", ctype)
+			WriteResponse(w, r.URL.Path, body)
+		} else {
+			fmt.Printf("%v %v\n", r.URL.Path, err)
+			e.notFound(w, r)
+		}
 	} else {
+		fmt.Printf("%v %v\n", r.URL.Path, err)
 		e.notFound(w, r)
 	}
 }

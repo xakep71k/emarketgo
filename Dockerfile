@@ -21,7 +21,7 @@ USER emarket
 
 COPY --from=builder /emarket/bin/emarket /emarket
 COPY web_root /www
-COPY data.txt /data/products.json
+COPY products.json /data/products.json
 EXPOSE 8080
 
 CMD ["/emarket", "--web-root=/www", "--listen", ":8080", "--data", "/data/products.json"]
