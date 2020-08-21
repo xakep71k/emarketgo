@@ -2,6 +2,7 @@ package impl
 
 import (
 	"emarket/html"
+	"emarket/model"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,25 +10,11 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 )
 
-type Product struct {
-	ID          string `bson:"_id,omitempty" json:"id"`
-	Title       string `bson:"title" json:"title"`
-	Price       int    `bson:"price" json:"price"`
-	Thumb       []byte `bson:"thumb" json:"thumb"`
-	Enable      bool   `bson:"enable" json:"enable"`
-	Description string `bson:"description" json:"description"`
-	Quantity    int    `bson:"quantity" json:"quantity"`
-	OldID       int    `bson:"oldid" json:"oldid"`
-	OldImgName  string `bson:"oldimgfile" json:"oldimgfile"`
-	PageNum     int    `bson:"-" json:"-"`
-}
-
 type Cart struct {
-	Products   []*Product
+	Products   []*model.Product
 	Empty      bool
 	TotalPrice int
 }
@@ -39,21 +26,23 @@ type EMarket struct {
 	content     *Content
 	router      *http.ServeMux
 	Pages       map[string][]byte
-	ProductsMap map[string]*Product
+	ProductsMap map[string]*model.Product
 	CSS         []byte
 	JS          []byte
 	FileCache   map[string][]byte
 }
 
-func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
-	sort.SliceStable(products, func(i, j int) bool {
-		return products[i].Title < products[j].Title
-	})
+func NewEMarket(rootDir string, db *model.DB) (*EMarket, error) {
+	products, err := db.FindAllProducts(model.NewFilter().Enable(true).Sort(true))
+
+	if err != nil {
+		return nil, err
+	}
 
 	e := &EMarket{
 		rootDir:     rootDir,
 		content:     NewContent(),
-		ProductsMap: make(map[string]*Product, 0),
+		ProductsMap: make(map[string]*model.Product, 0),
 		FileCache:   make(map[string][]byte),
 	}
 
@@ -73,7 +62,6 @@ func NewEMarket(rootDir string, products []*Product) (*EMarket, error) {
 		"neworder": NewOrderPage().htmlData(),
 	}
 
-	var err error
 	allCSS, err := concatFiles(rootDir, html.CSS)
 	if err != nil {
 		return nil, err
@@ -143,7 +131,7 @@ func (e *EMarket) staticHandler(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, r.URL.Path, content)
 }
 
-func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
+func (e *EMarket) setupRouter(products []*model.Product, productPagesHtml []string) {
 	router := http.NewServeMux()
 	router.HandleFunc("/favicon.ico", e.staticHandler)
 	router.HandleFunc("/static/", e.staticHandler)
@@ -172,7 +160,7 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 		magazineURL := "/zhurnaly/" + product.ID
 		magazineImageURL := "/product/image/" + product.ID
 
-		func(url string, product *Product) {
+		func(url string, product *model.Product) {
 			htmlData := product.Thumb
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 				setCacheControl(w)
@@ -180,14 +168,14 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 			})
 		}(magazineImageURL, product)
 
-		func(newImgURL string, product *Product) {
+		func(newImgURL string, product *model.Product) {
 			url := fmt.Sprintf("/thumbs/magazine/gallery/%v", product.OldImgName)
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 				http.Redirect(w, r, newImgURL, http.StatusMovedPermanently)
 			})
 		}(magazineImageURL, product)
 
-		func(url string, product *Product) {
+		func(url string, product *model.Product) {
 			body := html.Generate("show product", html.Product, product).String()
 			htmlData := NewProductPage(body, product.Title).htmlData()
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
@@ -195,7 +183,7 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 			})
 		}(magazineURL, product)
 
-		func(newURL string, product *Product) {
+		func(newURL string, product *model.Product) {
 			oldURL := fmt.Sprintf("/zhurnaly/%v", product.OldID)
 			router.HandleFunc(oldURL, func(w http.ResponseWriter, r *http.Request) {
 				http.Redirect(w, r, newURL, http.StatusMovedPermanently)
@@ -265,13 +253,13 @@ func (e *EMarket) setupRouter(products []*Product, productPagesHtml []string) {
 	e.router = router
 }
 
-func (e *EMarket) readProducts(r io.Reader) ([]*Product, error) {
+func (e *EMarket) readProducts(r io.Reader) ([]*model.Product, error) {
 	reqProducts := make([]string, 0)
 	if err := json.NewDecoder(r).Decode(&reqProducts); err != nil {
 		return nil, err
 	}
 
-	var foundProducts []*Product
+	var foundProducts []*model.Product
 	for _, id := range reqProducts {
 		if product, found := e.ProductsMap[id]; found {
 			foundProducts = append(foundProducts, product)

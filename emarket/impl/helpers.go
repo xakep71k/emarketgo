@@ -3,6 +3,7 @@ package impl
 import (
 	"bytes"
 	"emarket/html"
+	"emarket/model"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,14 +19,14 @@ import (
 	"github.com/tdewolff/minify/js"
 )
 
-func LoadProducts(dataPath string) (products []*Product, err error) {
+func LoadProducts(dataPath string) (products []*model.Product, err error) {
 	data, err := ioutil.ReadFile(dataPath)
 
 	if err != nil {
 		return products, err
 	}
 
-	var tmpProducts []*Product
+	var tmpProducts []*model.Product
 	if err := json.Unmarshal(data, &tmpProducts); err != nil {
 		return products, err
 	}
@@ -40,7 +41,7 @@ func LoadProducts(dataPath string) (products []*Product, err error) {
 
 const pageSize = 30
 
-func buildHtmlProductPages(productPages [][]*Product) []string {
+func buildHtmlProductPages(productPages [][]*model.Product) []string {
 	pages := make([]string, 0)
 	maxPages := len(productPages)
 
@@ -60,12 +61,12 @@ func buildHtmlProductPages(productPages [][]*Product) []string {
 	return pages
 }
 
-func collectProductsPages(products []*Product) (productPages [][]*Product) {
+func collectProductsPages(products []*model.Product) (productPages [][]*model.Product) {
 	iPage := -1
 	for i, p := range products {
 		if (i % pageSize) == 0 {
 			iPage++
-			productPages = append(productPages, make([]*Product, 0))
+			productPages = append(productPages, make([]*model.Product, 0))
 		}
 
 		productPages[iPage] = append(productPages[iPage], p)
@@ -74,7 +75,7 @@ func collectProductsPages(products []*Product) (productPages [][]*Product) {
 	return
 }
 
-func setPageNum(productPages [][]*Product) {
+func setPageNum(productPages [][]*model.Product) {
 	for index, products := range productPages {
 		for _, p := range products {
 			p.PageNum = index + 1

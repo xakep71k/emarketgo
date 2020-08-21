@@ -2,6 +2,7 @@ package main
 
 import (
 	"emarket/impl"
+	"emarket/model"
 	"flag"
 	"fmt"
 	"log"
@@ -46,14 +47,7 @@ func main() {
 		return
 	}
 
-	products, err := impl.LoadProducts(dataFile)
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	emarket, err := impl.NewEMarket(webRoot, products)
+	emarket, err := impl.NewEMarket(webRoot, model.NewDB(dataFile))
 
 	if err != nil {
 		log.Fatal(err)

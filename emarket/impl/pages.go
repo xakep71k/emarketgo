@@ -3,6 +3,7 @@ package impl
 import (
 	"bytes"
 	"emarket/html"
+	"emarket/model"
 )
 
 const (
@@ -26,7 +27,7 @@ type ProductPageList struct {
 	First       bool
 	Last        bool
 	PageNum     int
-	Products    []*Product
+	Products    []*model.Product
 	PageNumbers []int
 	MaxPages    int
 	ListHTML    string
@@ -118,7 +119,7 @@ func NewOrderPage() *Page {
 	return p
 }
 
-func NewProductPageList(index int, maxPages int, products []*Product, listHtml string) *ProductPageList {
+func NewProductPageList(index int, maxPages int, products []*model.Product, listHtml string) *ProductPageList {
 	p := &ProductPageList{
 		PageNum:  index + 1,
 		First:    index == 0,
