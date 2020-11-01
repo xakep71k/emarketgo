@@ -169,7 +169,7 @@ func (e *EMarket) setupRouter(products []*model.Product, productPagesHtml []stri
 		}(magazineImageURL, product)
 
 		func(newImgURL string, product *model.Product) {
-			url := fmt.Sprintf("/thumbs/magazine/gallery/%v", product.OldImgName)
+			url := "/thumbs/magazine/gallery/" + product.OldImgName
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 				http.Redirect(w, r, newImgURL, http.StatusMovedPermanently)
 			})
@@ -184,7 +184,7 @@ func (e *EMarket) setupRouter(products []*model.Product, productPagesHtml []stri
 		}(magazineURL, product)
 
 		func(newURL string, product *model.Product) {
-			oldURL := fmt.Sprintf("/zhurnaly/%v", product.OldID)
+			oldURL := "/zhurnaly/" + product.OldID
 			router.HandleFunc(oldURL, func(w http.ResponseWriter, r *http.Request) {
 				http.Redirect(w, r, newURL, http.StatusMovedPermanently)
 			})
@@ -193,7 +193,7 @@ func (e *EMarket) setupRouter(products []*model.Product, productPagesHtml []stri
 
 	for i, body := range productPagesHtml {
 		func(index int, htmlData []byte) {
-			url := fmt.Sprintf("/zhurnaly/stranitsa/%v", i+1)
+			url := fmt.Sprintf("/zhurnaly/stranitsa/%d", i+1)
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 				writeResponse(w, r.URL.Path, htmlData)
 			})
