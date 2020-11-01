@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -193,7 +194,7 @@ func (e *EMarket) setupRouter(products []*model.Product, productPagesHtml []stri
 
 	for i, body := range productPagesHtml {
 		func(index int, htmlData []byte) {
-			url := fmt.Sprintf("/zhurnaly/stranitsa/%d", i+1)
+			url := "/zhurnaly/stranitsa/" + strconv.Itoa(i+1)
 			router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 				writeResponse(w, r.URL.Path, htmlData)
 			})
