@@ -4,11 +4,11 @@ var SearchPath = []string{
 	"/static/",
 }
 
-var CSS = []string{
+var CSSs = []string{
 	"/static/css/custom_bootstrap.css",
 	"/static/css/app.css",
 }
 
-var JS = []string{
+var JSs = []string{
 	"/static/js/app.js",
 }

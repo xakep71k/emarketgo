@@ -62,12 +62,12 @@ func NewEMarket(rootDir string, db *model.DB) (*EMarket, error) {
 		"neworder": NewOrderPage().htmlData(),
 	}
 
-	allCSS, err := concatFiles(rootDir, html.CSS)
+	allCSS, err := concatFiles(rootDir, html.CSSs)
 	if err != nil {
 		return nil, err
 	}
 
-	allJS, err := concatFiles(rootDir, html.JS)
+	allJS, err := concatFiles(rootDir, html.JSs)
 	if err != nil {
 		return nil, err
 	}
