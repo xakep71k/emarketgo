@@ -1,4 +1,4 @@
-package records
+package emarket
 
 type Magazine struct {
 	ID          string `bson:"_id,omitempty" json:"id"`
@@ -10,4 +10,9 @@ type Magazine struct {
 	Quantity    int    `bson:"quantity" json:"quantity"`
 	OldID       int    `bson:"oldid" json:"oldid"`
 	OldImgName  string `bson:"oldimgfile" json:"oldimgfile"`
+	PageNum     int    `bson:"-" json:"-"`
+}
+
+type MagazieService interface {
+	Find() ([]*Magazine, error)
 }
