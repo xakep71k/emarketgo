@@ -2,7 +2,13 @@ package template
 
 import (
 	"bytes"
+	"regexp"
 	"text/template"
+
+	"github.com/tdewolff/minify"
+	"github.com/tdewolff/minify/css"
+	"github.com/tdewolff/minify/html"
+	"github.com/tdewolff/minify/js"
 )
 
 type Page struct {
@@ -11,11 +17,12 @@ type Page struct {
 }
 
 type PageBuilder struct {
-	template *template.Template
-	html     string
-	name     string
-	args     interface{}
-	funcs    map[string]interface{}
+	template    *template.Template
+	html        string
+	name        string
+	args        interface{}
+	funcs       map[string]interface{}
+	doNotMinify bool
 }
 
 func (r *PageBuilder) TemplateFuncs(funcs map[string]interface{}) *PageBuilder {
@@ -51,8 +58,16 @@ func (r *PageBuilder) Build(title string) (*Page, error) {
 		return nil, err
 	}
 
+	body := ""
+
+	if r.doNotMinify {
+		body = buf.String()
+	} else {
+		body = string(doMinify(buf.Bytes(), "text/html"))
+	}
+
 	page := &Page{
-		Body:  buf.String(),
+		Body:  body,
 		Title: title,
 	}
 
@@ -61,4 +76,17 @@ func (r *PageBuilder) Build(title string) (*Page, error) {
 
 func NewPageBuilder() *PageBuilder {
 	return &PageBuilder{}
+}
+
+func doMinify(body []byte, mtype string) []byte {
+	m := minify.New()
+	m.AddFunc("text/css", css.Minify)
+	m.AddFunc("text/html", html.Minify)
+	m.AddFuncRegexp(regexp.MustCompile("^(application|text)/(x-)?(java|ecma)script$"), js.Minify)
+	b, err := m.Bytes(mtype, body)
+	if err != nil {
+		panic("minify " + err.Error())
+	}
+
+	return b
 }
