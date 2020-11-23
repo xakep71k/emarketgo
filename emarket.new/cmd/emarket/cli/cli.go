@@ -36,21 +36,19 @@ func Parse() Opts {
 		log.Fatalln("listen ip:port not specified")
 	}
 
-	dataFile, err := filepath.Abs(*dataOpt)
+	abs := func(file string) string {
+		fullpath, err := filepath.Abs(file)
 
-	if err != nil {
-		log.Fatalln(err)
-	}
+		if err != nil {
+			log.Fatalln(err)
+		}
 
-	webRoot, err := filepath.Abs(*webRootOpt)
-
-	if err != nil {
-		log.Fatalln(err)
+		return fullpath
 	}
 
 	return Opts{
-		DataFile: dataFile,
+		DataFile: abs(*dataOpt),
+		WEBRoot:  abs(*webRootOpt),
 		Listen:   *listenOpt,
-		WEBRoot:  webRoot,
 	}
 }
