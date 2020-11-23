@@ -7,15 +7,15 @@ import (
 	"sort"
 )
 
-func NewMagazineService(filename string) *MagazineService {
-	return &MagazineService{filename: filename}
+func NewMagazineStorage(filename string) *MagazineStorage {
+	return &MagazineStorage{filename: filename}
 }
 
-type MagazineService struct {
+type MagazineStorage struct {
 	filename string
 }
 
-func (r *MagazineService) Find() ([]*emarket.Magazine, error) {
+func (r *MagazineStorage) Find() ([]*emarket.Magazine, error) {
 	content, err := ioutil.ReadFile(r.filename)
 
 	if err != nil {

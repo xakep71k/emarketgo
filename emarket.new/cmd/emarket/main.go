@@ -10,8 +10,8 @@ import (
 
 func main() {
 	opts := cli.Parse()
-	magazService := db.NewMagazineService(opts.DataFile)
-	magazines, err := magazService.Find()
+	magazStorage := db.NewMagazineStorage(opts.DataFile)
+	magazines, err := magazStorage.Find()
 
 	if err != nil {
 		log.Fatalln(err)
