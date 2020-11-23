@@ -1,4 +1,4 @@
-package utils
+package cmd
 
 import (
 	"flag"
@@ -13,7 +13,7 @@ type CmdArgs struct {
 	DataFile string
 }
 
-func ParseCmdLine() CmdArgs {
+func Parse() CmdArgs {
 	if len(os.Args) != 6 {
 		log.Fatalf("Usage: %s --web-root <path> --listen <ip:port> --data <path>\n", os.Args[0])
 		os.Exit(1)

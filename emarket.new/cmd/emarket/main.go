@@ -1,7 +1,7 @@
 package main
 
 import (
-	"emarket/cmd/emarket/utils"
+	"emarket/cmd/emarket/cmd"
 	"emarket/internal/emarket/file"
 	"emarket/internal/emarket/html/page"
 	"fmt"
@@ -9,8 +9,8 @@ import (
 )
 
 func main() {
-	cmdArgs := utils.ParseCmdLine()
-	magazService := file.NewMagazineService(cmdArgs.DataFile)
+	args := cmd.Parse()
+	magazService := file.NewMagazineService(args.DataFile)
 	magazines, err := magazService.Find()
 
 	if err != nil {
