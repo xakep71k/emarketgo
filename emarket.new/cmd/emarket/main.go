@@ -9,8 +9,8 @@ import (
 )
 
 func main() {
-	args := cmd.Parse()
-	magazService := file.NewMagazineService(args.DataFile)
+	params := cmd.Parse()
+	magazService := file.NewMagazineService(params.DataFile)
 	magazines, err := magazService.Find()
 
 	if err != nil {
