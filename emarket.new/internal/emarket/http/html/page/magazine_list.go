@@ -2,7 +2,7 @@ package page
 
 import (
 	"emarket/internal/emarket"
-	"emarket/internal/emarket/html"
+	"emarket/internal/emarket/http/html"
 	"emarket/internal/pkg/template"
 )
 
