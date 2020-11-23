@@ -1,4 +1,4 @@
-package cmd
+package cli
 
 import (
 	"flag"
@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 )
 
-type CmdArgs struct {
+type Opts struct {
 	WEBRoot  string
 	Listen   string
 	DataFile string
 }
 
-func Parse() CmdArgs {
+func Parse() Opts {
 	if len(os.Args) != 6 {
 		log.Fatalf("Usage: %s --web-root <path> --listen <ip:port> --data <path>\n", os.Args[0])
 		os.Exit(1)
@@ -48,7 +48,7 @@ func Parse() CmdArgs {
 		log.Fatalln(err)
 	}
 
-	return CmdArgs{
+	return Opts{
 		DataFile: dataFile,
 		Listen:   *listenOpt,
 		WEBRoot:  webRoot,
