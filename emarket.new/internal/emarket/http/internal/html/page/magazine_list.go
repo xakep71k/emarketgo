@@ -2,11 +2,12 @@ package page
 
 import (
 	"emarket/internal/emarket"
-	"emarket/internal/emarket/http/html"
+	"emarket/internal/emarket/http/internal/html"
 	"emarket/internal/pkg/template"
 )
 
 const magazinesOnPage = 30
+const magazineTitle = "Журналы и выкройки для шитья"
 
 func MagazineList(all []*emarket.Magazine) [][]byte {
 	var rawPages [][]byte
@@ -20,7 +21,6 @@ func MagazineList(all []*emarket.Magazine) [][]byte {
 }
 
 func buildMagazineList(all []*emarket.Magazine) []*template.Page {
-	const title = "Журналы и выкройки для шитья"
 	var pages []*template.Page
 	magazinePages := arrangeMagazinesPerPage(all)
 	builder := newPageBuilder()
@@ -29,7 +29,7 @@ func buildMagazineList(all []*emarket.Magazine) []*template.Page {
 		args := struct {
 			Title string
 		}{
-			Title: title,
+			Title: magazineTitle,
 		}
 
 		magazPageHTML, err := builder.Name("magazine page").Template(html.MagazineListTemplate).Args(magazPage).Build(args.Title)
