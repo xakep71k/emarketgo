@@ -1,9 +1,11 @@
 package http
 
 import (
+	"bytes"
 	"emarket/internal/emarket"
 	"emarket/internal/emarket/http/internal/html/page"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -78,4 +80,18 @@ func (e *EMarketHandler) setupMagazPages(allMagaz []*emarket.Magazine, pages [][
 			})
 		}(magazineImageURL, magaz)
 	}
+}
+
+func concatFiles(rootDir string, files []string) ([]byte, error) {
+	buf := &bytes.Buffer{}
+	for _, file := range files {
+		data, err := ioutil.ReadFile(rootDir + "/" + file)
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(data)
+		buf.Write([]byte("\n"))
+	}
+
+	return buf.Bytes(), nil
 }

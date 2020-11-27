@@ -20,7 +20,7 @@ func buildNotFound() *template.Page {
 	}
 
 	builder := newPageBuilder()
-	page, err := builder.Name(name).Template(html.ContactTemplate).Args(args).Build(args.Title)
+	page, err := builder.Name(name).Template(html.NotFound).Args(args).Build(args.Title)
 
 	if err != nil {
 		panic(err)

@@ -4,12 +4,35 @@ import (
 	"emarket/internal/pkg/minify"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 )
 
+var CSSs = []string{
+	"/static/css/custom_bootstrap.css",
+	"/static/css/app.css",
+}
+
+var JSs = []string{
+	"/static/js/app.js",
+}
+
 func (e *EMarketHandler) setupFileHandler() {
+	allCSS, err := concatFiles(e.webRoot, CSSs)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	allJS, err := concatFiles(e.webRoot, JSs)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	e.fileCache["/static/css/all.css"] = minify.DoMinify(allCSS, "text/css")
+	e.fileCache["/static/js/all.js"] = minify.DoMinify(allJS, "application/javascript")
+
 	const favicon = "/favicon.ico"
 	faviconPath := "/static" + favicon
 
