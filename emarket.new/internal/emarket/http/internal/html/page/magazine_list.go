@@ -28,6 +28,7 @@ func buildMagazineList(all []*emarket.Magazine) []*template.Page {
 
 	for pageIndex, magazPage := range magazinePages {
 		args := struct {
+			*emarket.Magazine
 			Title string
 		}{
 			Title: magazineTitle,
@@ -64,6 +65,7 @@ func arrangeMagazinesPerPage(magazines []*emarket.Magazine) (magazinePages [][]*
 		}
 
 		magazinePages[iPage] = append(magazinePages[iPage], magaz)
+		magaz.PageNum = iPage + 1
 	}
 
 	return

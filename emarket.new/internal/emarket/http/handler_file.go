@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"emarket/internal/pkg/minify"
 	"fmt"
 	"io/ioutil"
@@ -10,22 +11,22 @@ import (
 	"path/filepath"
 )
 
-var CSSs = []string{
-	"/static/css/custom_bootstrap.css",
-	"/static/css/app.css",
-}
-
-var JSs = []string{
-	"/static/js/app.js",
-}
-
 func (e *EMarketHandler) setupFileHandler() {
-	allCSS, err := concatFiles(e.webRoot, CSSs)
+	var csss = []string{
+		"/static/css/custom_bootstrap.css",
+		"/static/css/app.css",
+	}
+
+	var jss = []string{
+		"/static/js/app.js",
+	}
+
+	allCSS, err := concatFiles(e.webRoot, csss)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	allJS, err := concatFiles(e.webRoot, JSs)
+	allJS, err := concatFiles(e.webRoot, jss)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -102,4 +103,18 @@ func (e *EMarketHandler) handleSpecifiedFile(w http.ResponseWriter, r *http.Requ
 	setCacheControl(w)
 	w.Header().Set("Content-Type", ctype)
 	writeResponse(w, r.URL.Path, content)
+}
+
+func concatFiles(rootDir string, files []string) ([]byte, error) {
+	buf := &bytes.Buffer{}
+	for _, file := range files {
+		data, err := ioutil.ReadFile(rootDir + "/" + file)
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(data)
+		buf.Write([]byte("\n"))
+	}
+
+	return buf.Bytes(), nil
 }

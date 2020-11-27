@@ -1,11 +1,9 @@
 package http
 
 import (
-	"bytes"
 	"emarket/internal/emarket"
 	"emarket/internal/emarket/http/internal/html/page"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -47,6 +45,22 @@ func (e *EMarketHandler) setupRouter() {
 	e.setupRootPage(pages[0])
 	e.setupMagazPages(allMagaz, pages)
 	e.setupFileHandler()
+	e.setupContactPage()
+	e.setupHistoryPage()
+}
+
+func (e *EMarketHandler) setupContactPage() {
+	page := page.Contact()
+	e.router.HandleFunc("/kontakty", func(w http.ResponseWriter, r *http.Request) {
+		writeResponse(w, r.URL.Path, page)
+	})
+}
+
+func (e *EMarketHandler) setupHistoryPage() {
+	page := page.History()
+	e.router.HandleFunc("/istoriya_prosmotrov", func(w http.ResponseWriter, r *http.Request) {
+		writeResponse(w, r.URL.Path, page)
+	})
 }
 
 func (e *EMarketHandler) setupRootPage(page []byte) {
@@ -70,6 +84,7 @@ func (e *EMarketHandler) setupMagazPages(allMagaz []*emarket.Magazine, pages [][
 	}
 
 	for _, magaz := range allMagaz {
+		magazineURL := "/zhurnaly/" + magaz.ID
 		magazineImageURL := "/product/image/" + magaz.ID
 
 		func(url string, magaz *emarket.Magazine) {
@@ -79,19 +94,12 @@ func (e *EMarketHandler) setupMagazPages(allMagaz []*emarket.Magazine, pages [][
 				writeResponse(w, r.URL.Path, data)
 			})
 		}(magazineImageURL, magaz)
-	}
-}
 
-func concatFiles(rootDir string, files []string) ([]byte, error) {
-	buf := &bytes.Buffer{}
-	for _, file := range files {
-		data, err := ioutil.ReadFile(rootDir + "/" + file)
-		if err != nil {
-			return nil, err
-		}
-		buf.Write(data)
-		buf.Write([]byte("\n"))
+		func(url string, magaz *emarket.Magazine) {
+			page := page.Magazine(magaz)
+			e.router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
+				writeResponse(w, r.URL.Path, page)
+			})
+		}(magazineURL, magaz)
 	}
-
-	return buf.Bytes(), nil
 }
