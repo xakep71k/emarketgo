@@ -3,22 +3,22 @@ package http
 import (
 	"emarket/internal/emarket"
 	"emarket/internal/emarket/http/internal/html/page"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"syscall"
 )
 
 type EMarketHandler struct {
 	magazStorage emarket.MagazineStorage
 	router       *http.ServeMux
+	webRoot      string
 }
 
-func NewEMarketHandler(magazStorage emarket.MagazineStorage) *EMarketHandler {
+func NewEMarketHandler(webRoot string, magazStorage emarket.MagazineStorage) *EMarketHandler {
 	h := &EMarketHandler{
 		magazStorage: magazStorage,
 		router:       http.NewServeMux(),
+		webRoot:      webRoot,
 	}
 
 	h.setupRouter()
@@ -50,13 +50,5 @@ func (e *EMarketHandler) setupMagazPages() {
 				writeResponse(w, r.URL.Path, htmlData)
 			})
 		}(i, data)
-	}
-}
-
-func writeResponse(w http.ResponseWriter, path string, data []byte) {
-	if _, err := w.Write(data); err != nil {
-		if !errors.Is(err, syscall.EPIPE) {
-			fmt.Printf("%v %v\n", path, err)
-		}
 	}
 }

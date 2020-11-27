@@ -12,7 +12,7 @@ import (
 func main() {
 	opts := cli.Parse()
 	magazStorage := db.NewMagazineStorage(opts.DBFile)
-	handler := http.NewEMarketHandler(magazStorage)
+	handler := http.NewEMarketHandler(opts.WEBRoot, magazStorage)
 	srv := http.NewServer(handler, opts.Listen)
 
 	dir, err := os.Getwd()
