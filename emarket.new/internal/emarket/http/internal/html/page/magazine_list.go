@@ -24,6 +24,7 @@ func buildMagazineList(all []*emarket.Magazine) []*template.Page {
 	var pages []*template.Page
 	magazinePages := arrangeMagazinesPerPage(all)
 	builder := newPageBuilder()
+	maxPages := len(magazinePages)
 
 	for pageIndex, magazPage := range magazinePages {
 		args := struct {
@@ -38,7 +39,7 @@ func buildMagazineList(all []*emarket.Magazine) []*template.Page {
 			panic(err)
 		}
 
-		pageWithPaginationHTML := embedIntoPagination(magazPageHTML, pageIndex, magazinesOnPage)
+		pageWithPaginationHTML := embedIntoPagination(magazPageHTML, pageIndex, maxPages)
 		appIndex := 0
 
 		if pageIndex == 0 {

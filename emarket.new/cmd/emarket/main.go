@@ -1,17 +1,25 @@
 package main
 
+import (
+	"emarket/cmd/emarket/cli"
+	db "emarket/internal/emarket/db/fs"
+	"emarket/internal/emarket/http"
+	"fmt"
+	"log"
+	"os"
+)
+
 func main() {
-	/*
-		opts := cli.Parse()
-		magazStorage := db.NewMagazineStorage(opts.DataFile)
-		magazines, err := magazStorage.Find()
+	opts := cli.Parse()
+	magazStorage := db.NewMagazineStorage(opts.DBFile)
+	handler := http.NewEMarketHandler(magazStorage)
+	srv := http.NewServer(handler, opts.Listen)
 
-		if err != nil {
-			log.Fatalln(err)
-		}
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		for _, p := range page.MagazineList(magazines) {
-			fmt.Println(string(p))
-		}
-	*/
+	fmt.Printf("started %v\n", dir)
+	log.Fatal(srv.ListenAndServe())
 }

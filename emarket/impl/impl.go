@@ -185,7 +185,7 @@ func (e *EMarket) setupRouter(products []*model.Product, productPagesHtml []stri
 		}(magazineURL, product)
 
 		func(newURL string, product *model.Product) {
-			oldURL := "/zhurnaly/" + product.OldID
+			oldURL := fmt.Sprintf("/zhurnaly/%d", product.OldID)
 			router.HandleFunc(oldURL, func(w http.ResponseWriter, r *http.Request) {
 				http.Redirect(w, r, newURL, http.StatusMovedPermanently)
 			})

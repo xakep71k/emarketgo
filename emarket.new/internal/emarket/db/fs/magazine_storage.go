@@ -1,4 +1,4 @@
-package file
+package fs
 
 import (
 	"emarket/internal/emarket"
@@ -25,9 +25,26 @@ func (r *MagazineStorage) Find() ([]*emarket.Magazine, error) {
 	var magazines []*emarket.Magazine
 	err = json.Unmarshal(content, &magazines)
 
+	magazines = filterDisabledMagaz(magazines)
+
 	sort.SliceStable(magazines, func(i, j int) bool {
 		return magazines[i].Title < magazines[j].Title
 	})
 
 	return magazines, err
+}
+
+func filterDisabledMagaz(mm []*emarket.Magazine) []*emarket.Magazine {
+	var found int
+
+	for _, m := range mm {
+		if !m.Enable {
+			continue
+		}
+
+		mm[found] = m
+		found++
+	}
+
+	return mm[:found]
 }

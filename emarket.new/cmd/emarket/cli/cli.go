@@ -8,9 +8,9 @@ import (
 )
 
 type Opts struct {
-	WEBRoot  string
-	Listen   string
-	DataFile string
+	WEBRoot string
+	Listen  string
+	DBFile  string
 }
 
 func Parse() Opts {
@@ -47,8 +47,8 @@ func Parse() Opts {
 	}
 
 	return Opts{
-		DataFile: abs(*dataOpt),
-		WEBRoot:  abs(*webRootOpt),
-		Listen:   *listenOpt,
+		DBFile:  abs(*dataOpt),
+		WEBRoot: abs(*webRootOpt),
+		Listen:  *listenOpt,
 	}
 }

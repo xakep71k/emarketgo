@@ -13,6 +13,6 @@ type Magazine struct {
 	PageNum     int    `bson:"-" json:"-"`
 }
 
-type MagazieStorage interface {
+type MagazineStorage interface {
 	Find() ([]*Magazine, error)
 }
