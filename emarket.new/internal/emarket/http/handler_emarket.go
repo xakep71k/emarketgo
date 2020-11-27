@@ -12,6 +12,8 @@ type EMarketHandler struct {
 	magazStorage emarket.MagazineStorage
 	router       *http.ServeMux
 	webRoot      string
+	fileCache    map[string][]byte
+	notFoundPage []byte
 }
 
 func NewEMarketHandler(webRoot string, magazStorage emarket.MagazineStorage) *EMarketHandler {
@@ -19,6 +21,8 @@ func NewEMarketHandler(webRoot string, magazStorage emarket.MagazineStorage) *EM
 		magazStorage: magazStorage,
 		router:       http.NewServeMux(),
 		webRoot:      webRoot,
+		fileCache:    make(map[string][]byte),
+		notFoundPage: page.NotFound(),
 	}
 
 	h.setupRouter()
@@ -31,10 +35,6 @@ func (e *EMarketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *EMarketHandler) setupRouter() {
-	e.setupMagazPages()
-}
-
-func (e *EMarketHandler) setupMagazPages() {
 	allMagaz, err := e.magazStorage.Find()
 
 	if err != nil {
@@ -42,7 +42,22 @@ func (e *EMarketHandler) setupMagazPages() {
 	}
 
 	pages := page.MagazineList(allMagaz)
+	e.setupRootPage(pages[0])
+	e.setupMagazPages(allMagaz, pages)
+	e.setupFileHandler()
+}
 
+func (e *EMarketHandler) setupRootPage(page []byte) {
+	e.router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			e.notFound(w, r)
+		} else {
+			writeResponse(w, r.URL.Path, page)
+		}
+	})
+}
+
+func (e *EMarketHandler) setupMagazPages(allMagaz []*emarket.Magazine, pages [][]byte) {
 	for i, data := range pages {
 		func(index int, htmlData []byte) {
 			url := fmt.Sprintf("/zhurnaly/stranitsa/%d", i+1)
@@ -50,5 +65,17 @@ func (e *EMarketHandler) setupMagazPages() {
 				writeResponse(w, r.URL.Path, htmlData)
 			})
 		}(i, data)
+	}
+
+	for _, magaz := range allMagaz {
+		magazineImageURL := "/product/image/" + magaz.ID
+
+		func(url string, magaz *emarket.Magazine) {
+			data := magaz.Thumb
+			e.router.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
+				setCacheControl(w)
+				writeResponse(w, r.URL.Path, data)
+			})
+		}(magazineImageURL, magaz)
 	}
 }
