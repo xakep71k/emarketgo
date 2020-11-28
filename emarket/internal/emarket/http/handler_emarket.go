@@ -9,7 +9,6 @@ import (
 )
 
 type EMarketHandler struct {
-	magazStorage emarket.MagazineStorage
 	router       *http.ServeMux
 	webRoot      string
 	notFoundPage []byte
@@ -17,13 +16,12 @@ type EMarketHandler struct {
 
 func NewEMarketHandler(webRoot string, magazStorage emarket.MagazineStorage) *EMarketHandler {
 	h := &EMarketHandler{
-		magazStorage: magazStorage,
 		router:       http.NewServeMux(),
 		webRoot:      webRoot,
 		notFoundPage: page.NotFound(),
 	}
 
-	h.setupRouter()
+	h.setupRouter(magazStorage)
 
 	return h
 }
@@ -32,8 +30,8 @@ func (e *EMarketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	e.router.ServeHTTP(w, r)
 }
 
-func (e *EMarketHandler) setupRouter() {
-	allMagaz, err := e.magazStorage.Find()
+func (e *EMarketHandler) setupRouter(magazStorage emarket.MagazineStorage) {
+	allMagaz, err := magazStorage.Find()
 
 	if err != nil {
 		log.Fatalln(err)
