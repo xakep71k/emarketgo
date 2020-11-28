@@ -31,17 +31,21 @@ func (e *EMarketHandler) setupFileHandler() {
 		log.Fatalln(err)
 	}
 
-	e.fileCache["/static/css/all.css"] = minify.DoMinify(allCSS, "text/css")
-	e.fileCache["/static/js/all.js"] = minify.DoMinify(allJS, "application/javascript")
+	fileCache := make(map[string][]byte)
+	fileCache["/static/css/all.css"] = minify.DoMinify(allCSS, "text/css")
+	fileCache["/static/js/all.js"] = minify.DoMinify(allJS, "application/javascript")
 
 	const favicon = "/favicon.ico"
 	faviconPath := "/static" + favicon
 
 	e.router.HandleFunc(favicon, func(w http.ResponseWriter, r *http.Request) {
-		e.handleSpecifiedFile(w, r, faviconPath)
+		e.fileHandler(w, r, faviconPath, fileCache)
 	})
 
-	e.router.HandleFunc("/static/", e.fileHandler)
+	e.router.HandleFunc("/static/", func(w http.ResponseWriter, r *http.Request) {
+		e.fileHandler(w, r, r.URL.Path, fileCache)
+	})
+
 }
 
 func (e *EMarketHandler) fullpath(file string) string {
@@ -54,11 +58,7 @@ func (e *EMarketHandler) fullpath(file string) string {
 	return ""
 }
 
-func (e *EMarketHandler) fileHandler(w http.ResponseWriter, r *http.Request) {
-	e.handleSpecifiedFile(w, r, r.URL.Path)
-}
-
-func (e *EMarketHandler) handleSpecifiedFile(w http.ResponseWriter, r *http.Request, filename string) {
+func (e *EMarketHandler) fileHandler(w http.ResponseWriter, r *http.Request, filename string, fileCache map[string][]byte) {
 	log := func(err error) {
 		fmt.Printf("%v %v", r.URL.Path, err)
 	}
@@ -71,7 +71,7 @@ func (e *EMarketHandler) handleSpecifiedFile(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	content := e.fileCache[requestedFile]
+	content := fileCache[requestedFile]
 	ctype, err := detectType(requestedFile)
 
 	if err != nil {
@@ -97,7 +97,7 @@ func (e *EMarketHandler) handleSpecifiedFile(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		e.fileCache[requestedFile] = minify.DoMinify(content, ctype)
+		fileCache[requestedFile] = minify.DoMinify(content, ctype)
 	}
 
 	setCacheControl(w)

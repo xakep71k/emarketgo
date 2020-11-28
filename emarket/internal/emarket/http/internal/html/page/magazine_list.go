@@ -4,6 +4,7 @@ import (
 	"emarket/internal/emarket"
 	"emarket/internal/emarket/http/internal/html"
 	"emarket/internal/pkg/template"
+	"log"
 )
 
 const magazinesOnPage = 30
@@ -20,6 +21,17 @@ func MagazineList(all []*emarket.Magazine) [][]byte {
 	return rawPages
 }
 
+func Magazines(magazes []*emarket.Magazine) []byte {
+	builder := newPageBuilder()
+	page, err := builder.Name("magazine page").Template(html.MagazineListTemplate).Args(magazes).Build("")
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	return []byte(page.Body)
+}
+
 func buildMagazineList(all []*emarket.Magazine) []*template.Page {
 	var pages []*template.Page
 	magazinePages := arrangeMagazinesPerPage(all)
@@ -27,14 +39,7 @@ func buildMagazineList(all []*emarket.Magazine) []*template.Page {
 	maxPages := len(magazinePages)
 
 	for pageIndex, magazPage := range magazinePages {
-		args := struct {
-			*emarket.Magazine
-			Title string
-		}{
-			Title: magazineTitle,
-		}
-
-		magazPageHTML, err := builder.Name("magazine page").Template(html.MagazineListTemplate).Args(magazPage).Build(args.Title)
+		magazPageHTML, err := builder.Name("magazine page").Template(html.MagazineListTemplate).Args(magazPage).Build(magazineTitle)
 
 		if err != nil {
 			panic(err)

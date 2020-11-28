@@ -12,7 +12,6 @@ type EMarketHandler struct {
 	magazStorage emarket.MagazineStorage
 	router       *http.ServeMux
 	webRoot      string
-	fileCache    map[string][]byte
 	notFoundPage []byte
 }
 
@@ -21,7 +20,6 @@ func NewEMarketHandler(webRoot string, magazStorage emarket.MagazineStorage) *EM
 		magazStorage: magazStorage,
 		router:       http.NewServeMux(),
 		webRoot:      webRoot,
-		fileCache:    make(map[string][]byte),
 		notFoundPage: page.NotFound(),
 	}
 
@@ -47,6 +45,7 @@ func (e *EMarketHandler) setupRouter() {
 	e.setupFileHandler()
 	e.setupContactPage()
 	e.setupHistoryPage()
+	e.setupRESTAPI()
 }
 
 func (e *EMarketHandler) setupContactPage() {
