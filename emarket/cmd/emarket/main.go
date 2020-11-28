@@ -20,6 +20,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("started %v\n", dir)
+	fmt.Printf("started at %v\n", dir)
 	log.Fatal(srv.ListenAndServe())
 }
