@@ -5,20 +5,13 @@ import (
 	"emarket/internal/emarket/http/internal/html/page"
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 )
 
 const RequestLimit = 1024 * 2
 
-func (e *EMarketHandler) setupRESTAPI() {
-	mm, err := e.magazStorage.Find()
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	magazMap := newMagazMap(mm)
+func (e *EMarketHandler) setupRESTAPI(allMagaz []*emarket.Magazine) {
+	magazMap := newMagazMap(allMagaz)
 
 	e.router.HandleFunc("/api/magazines", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {

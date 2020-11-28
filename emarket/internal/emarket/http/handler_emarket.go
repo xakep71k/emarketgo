@@ -45,7 +45,7 @@ func (e *EMarketHandler) setupRouter() {
 	e.setupFileHandler()
 	e.setupContactPage()
 	e.setupHistoryPage()
-	e.setupRESTAPI()
+	e.setupRESTAPI(allMagaz)
 }
 
 func (e *EMarketHandler) setupContactPage() {
